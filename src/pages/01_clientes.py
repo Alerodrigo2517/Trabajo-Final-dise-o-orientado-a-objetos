@@ -1,43 +1,26 @@
 import streamlit as st
+from sqlalchemy.exc import SQLAlchemyError
 
-st.title("👥 Clientes")
-st.write("Completa los datos para agregar un cliente.")
+from src.services.client_service import list_clients
+from src.ui import client_entry_rows, database_error, page_header, records_table
 
-if "clientes" not in st.session_state:
-    st.session_state.clientes = []
+page_header("PERSONAS Y EMPRESAS", "Clientes", "El CUIT identifica a cada cliente; los datos de contacto se guardan al preparar un presupuesto.")
 
 with st.container(border=True):
-    st.subheader("Nuevo cliente")
-    with st.form("formulario_cliente"):
-        columna1, columna2 = st.columns(2)
-        with columna1:
-            cuit = st.text_input("CUIT", placeholder="20-12345678-9")
-            nombre = st.text_input("Nombre")
-        with columna2:
-            apellido = st.text_input("Apellido")
-        guardar = st.form_submit_button("Guardar cliente", type="primary")
+    client_entry_rows()
 
-if guardar:
-    if cuit == "" or nombre == "" or apellido == "":
-        st.error("Completa todos los campos.")
-    else:
-        existe = False
-        for cliente in st.session_state.clientes:
-            if cliente["CUIT"] == cuit:
-                existe = True
-
-        if existe:
-            st.error("Ya existe un cliente con ese CUIT.")
-        else:
-            cliente = {"CUIT": cuit, "Nombre": nombre, "Apellido": apellido}
-            st.session_state.clientes.append(cliente)
-            st.success("Cliente guardado.")
-
-st.subheader("Clientes registrados")
-
-if len(st.session_state.clientes) == 0:
-    st.info("Todavía no hay clientes cargados.")
-else:
-    st.table(st.session_state.clientes)
-
-st.caption("Los datos se borran al cerrar la aplicación. Todavía no están guardados en la base de datos.")
+st.subheader("Directorio de clientes")
+try:
+    clients = list_clients()
+    rows = [
+        {
+            "Nombre": client["nombre"],
+            "Apellido": client["apellido"],
+            "CUIT": client["cuit_display"],
+            "Contactos registrados": len(client["contactos"]),
+        }
+        for client in clients
+    ]
+    records_table(rows, "clientes", "Todavía no hay clientes", "Al completar una fila, el cliente se guarda en MySQL.")
+except SQLAlchemyError:
+    database_error()

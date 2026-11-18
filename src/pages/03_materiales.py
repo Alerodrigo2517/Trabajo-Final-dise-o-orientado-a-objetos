@@ -1,70 +1,70 @@
 import streamlit as st
+from sqlalchemy.exc import SQLAlchemyError
 
-st.title("🧰 Materiales y proveedores")
-st.write("Primero registra un proveedor y luego podrás asociarle materiales.")
+from src.services.material_service import create_material, create_supplier, list_materials, list_suppliers
+from src.ui import currency, database_error, page_header, records_table
 
-if "proveedores" not in st.session_state:
-    st.session_state.proveedores = []
-if "materiales" not in st.session_state:
-    st.session_state.materiales = []
+page_header("ABASTECIMIENTO", "Materiales y proveedores", "Consultá precios y proveedores desde las tablas existentes de la base de datos.")
 
-with st.container(border=True):
-    st.subheader("Registrar proveedor")
-    with st.form("formulario_proveedor"):
-        nombre_proveedor = st.text_input("Nombre del proveedor")
-        rubro = st.text_input("Rubro")
-        telefono_proveedor = st.text_input("Teléfono")
-        guardar_proveedor = st.form_submit_button("Guardar proveedor")
+suppliers = []
+materials = []
+try:
+    suppliers = list_suppliers()
+    materials = list_materials()
+except SQLAlchemyError:
+    database_error()
 
-if guardar_proveedor:
-    if nombre_proveedor.strip() == "" or rubro.strip() == "" or telefono_proveedor.strip() == "":
-        st.error("Completa todos los datos del proveedor.")
-    else:
-        proveedor = {
-            "Número": len(st.session_state.proveedores) + 1,
-            "Nombre": nombre_proveedor,
-            "Rubro": rubro,
-            "Teléfono": telefono_proveedor,
-        }
-        st.session_state.proveedores.append(proveedor)
-        st.success("Proveedor guardado.")
+supplier_col, material_col = st.columns(2, gap="large")
+with supplier_col:
+    with st.container(border=True):
+        st.subheader("Nuevo proveedor")
+        with st.form("supplier_form"):
+            supplier_name = st.text_input("Nombre")
+            supplier_business = st.text_input("Rubro")
+            supplier_phone = st.text_input("Teléfono")
+            supplier_submit = st.form_submit_button("Guardar proveedor", type="primary", width="stretch")
+        if supplier_submit:
+            try:
+                create_supplier(supplier_name, supplier_business, supplier_phone)
+                st.success("Proveedor guardado en la base de datos.")
+                st.rerun()
+            except (ValueError, SQLAlchemyError) as error:
+                database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))
 
-st.subheader("Registrar material")
-if st.session_state.proveedores:
-    nombres_proveedores = [proveedor["Nombre"] for proveedor in st.session_state.proveedores]
-    with st.form("formulario_material"):
-        descripcion = st.text_input("Descripción del material")
-        precio = st.number_input("Precio unitario", min_value=0.0, value=0.0, step=100.0)
-        proveedor_elegido = st.selectbox("Proveedor", nombres_proveedores)
-        guardar_material = st.form_submit_button("Guardar material", type="primary")
-
-    if guardar_material:
-        if descripcion.strip() == "":
-            st.error("Escribe la descripción del material.")
-        else:
-            material = {
-                "Número": len(st.session_state.materiales) + 1,
-                "Descripción": descripcion,
-                "Precio unitario": precio,
-                "Proveedor": proveedor_elegido,
+with material_col:
+    with st.container(border=True):
+        st.subheader("Nuevo material")
+        if suppliers:
+            supplier_options = {
+                f"{supplier['nombre']} · {supplier['rubro']} · #{supplier['id_proveedor']}": supplier
+                for supplier in suppliers
             }
-            st.session_state.materiales.append(material)
-            st.success("Material guardado.")
-else:
-    st.info("Registra un proveedor antes de agregar materiales.")
+            with st.form("material_form"):
+                material_description = st.text_input("Descripción")
+                material_price = st.number_input("Precio unitario (ARS $)", min_value=0.0, value=0.0, step=100.0)
+                supplier_label = st.selectbox("Proveedor", list(supplier_options))
+                material_submit = st.form_submit_button("Guardar material", type="primary", width="stretch")
+            if material_submit:
+                try:
+                    create_material(
+                        material_description,
+                        material_price,
+                        supplier_options[supplier_label]["id_proveedor"],
+                    )
+                    st.success("Material guardado en la base de datos.")
+                    st.rerun()
+                except (ValueError, SQLAlchemyError) as error:
+                    database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))
+        else:
+            st.info("Registrá un proveedor antes de cargar un material.")
 
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader("Proveedores")
-    if st.session_state.proveedores:
-        st.table(st.session_state.proveedores)
-    else:
-        st.write("Todavía no hay proveedores.")
-with col2:
-    st.subheader("Materiales")
-    if st.session_state.materiales:
-        st.table(st.session_state.materiales)
-    else:
-        st.write("Todavía no hay materiales.")
+st.info("El esquema actual registra descripción, precio unitario y proveedor. No tiene columnas de unidad, cantidad en stock ni stock mínimo.")
 
-st.caption("Los datos son temporales y se borran al cerrar la aplicación.")
+st.subheader("Proveedores registrados")
+records_table(suppliers, "suppliers", "Todavía no hay proveedores", "Agregá proveedores desde el formulario de arriba.")
+st.subheader("Materiales registrados")
+material_rows = [
+    {"Descripción": row["descripcion"], "Precio unitario": currency(row["precio_unitario"]), "Proveedor": row["proveedor"]}
+    for row in materials
+]
+records_table(material_rows, "materials", "Todavía no hay materiales", "Agregá materiales y asocialos con un proveedor.")

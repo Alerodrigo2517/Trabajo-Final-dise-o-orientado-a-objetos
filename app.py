@@ -1,45 +1,48 @@
 import streamlit as st
+from sqlalchemy.exc import SQLAlchemyError
 
-st.set_page_config(page_title="Sistema de Herrería", page_icon="🔨", layout="wide")
-st.sidebar.title("🔨 Herrería")
-st.sidebar.caption("Gestión del taller")
+from src.components.budget_form import render_budget_form
+from src.services.dashboard_service import get_dashboard_summary
+from src.ui import apply_theme, client_entry_rows, currency, database_error, page_header
+
+st.set_page_config(page_title="Herrería | Gestión del taller", page_icon="🔨", layout="wide")
+st.session_state["_database_error_shown"] = False
+apply_theme()
+st.sidebar.markdown("# 🔨 Herrería")
+st.sidebar.caption("GESTIÓN DEL TALLER")
+st.sidebar.divider()
 
 
 def inicio():
-    st.title("Sistema de Herrería")
-    st.write("Un espacio para organizar la información del taller.")
+    page_header("OPERACIÓN DEL TALLER", "Sistema de Herrería", "Registrá clientes y prepará presupuestos vinculados con los datos del esquema actual.")
+    try:
+        summary = get_dashboard_summary()
+        metrics = st.columns(4)
+        metrics[0].metric("Presupuestos pendientes", summary["presupuestos_pendientes"])
+        metrics[1].metric("Trabajos activos", summary["trabajos_activos"])
+        metrics[2].metric("Trabajos terminados", summary["trabajos_terminados"])
+        metrics[3].metric("Ingresos del mes", currency(summary["ingresos_mes"]))
+        st.caption(f"{summary['clientes']} clientes · {summary['materiales']} materiales registrados")
+    except SQLAlchemyError:
+        database_error()
 
-    st.subheader("Secciones del sistema")
-    columna1, columna2, columna3 = st.columns(3)
-
-    with columna1:
+    left, right = st.columns([1.05, 1], gap="large")
+    with left:
         with st.container(border=True):
-            st.subheader("👥 Clientes")
-            st.write("Datos de las personas y empresas que solicitan trabajos.")
-
-    with columna2:
+            st.markdown('<p class="panel-heading">CLIENTES</p>', unsafe_allow_html=True)
+            client_entry_rows()
+    with right:
         with st.container(border=True):
-            st.subheader("📄 Presupuestos")
-            st.write("Cálculo y seguimiento de los trabajos solicitados.")
+            render_budget_form(key_prefix="inicio_presupuesto", compact=True)
 
-    with columna3:
-        with st.container(border=True):
-            st.subheader("🧰 Materiales")
-            st.write("Materiales disponibles, precios y proveedores.")
-
-    columna4, columna5 = st.columns(2)
-
-    with columna4:
-        with st.container(border=True):
-            st.subheader("💳 Pagos")
-            st.write("Registro de pagos asociados a los presupuestos.")
-
-    with columna5:
-        with st.container(border=True):
-            st.subheader("🛠️ Trabajos")
-            st.write("Seguimiento del estado de cada trabajo.")
-
-    st.info("Los formularios guardan los datos solo durante esta sesión.")
+    with st.expander("Otras secciones"):
+        links = st.columns(4)
+        for column, path, label in zip(
+            links,
+            ("src/pages/03_materiales.py", "src/pages/04_pagos.py", "src/pages/05_trabajos.py", "src/pages/02_presupuestos.py"),
+            ("Materiales", "Pagos", "Trabajos", "Historial de presupuestos"),
+        ):
+            column.page_link(path, label=label)
 
 
 paginas = [

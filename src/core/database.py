@@ -1,9 +1,8 @@
 from __future__ import annotations
 from contextlib import contextmanager
-from sqlalchemy import create_engine
-from sqlalchemy import text
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import sessionmaker
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from src.core.config import settings
 
@@ -22,6 +21,7 @@ SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
     expire_on_commit=False,
+    class_=Session,
 )
 
 
@@ -44,5 +44,3 @@ def test_connection() -> bool:
             text("select 1")
         )
         return result.scalar_one() == 1
-
-print(test_connection())
