@@ -20,12 +20,21 @@ def render_login() -> None:
         }
         .main .block-container {
           max-width: 1120px !important;
-          padding-top: 3.2rem !important;
+          box-sizing: border-box;
+          min-height: calc(100dvh - 3rem);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem 1.2rem !important;
+        }
+        .main .block-container > div[data-testid="stVerticalBlock"] {
+          width: 100%;
         }
         .login-showcase {
           display: grid;
           place-items: center;
-          min-height: 620px;
+          height: min(76vh, 600px);
+          min-height: 360px;
           padding: 2rem;
           border-radius: 20px;
           background: radial-gradient(circle at 50% 48%, rgba(217, 119, 6, 0.15) 0%, transparent 48%),
@@ -57,16 +66,19 @@ def render_login() -> None:
           pointer-events: none;
         }
         @media (max-width: 900px) {
-          .main .block-container { padding-top: 1.5rem !important; }
-          .login-showcase { min-height: 440px; }
-          .login-hero-logo { width: min(100%, 390px); max-height: 390px; }
+          .main .block-container { min-height: calc(100dvh - 2rem); padding: 0.75rem !important; }
+          .login-showcase { height: min(72vh, 520px); min-height: 320px; }
+          .login-hero-logo { width: min(100%, 360px); max-height: 440px; }
         }
         @media (max-width: 600px) {
-          .login-showcase { min-height: 320px; padding: 1.25rem; }
-          .login-hero-logo { width: min(100%, 300px); max-height: 300px; }
+          .main .block-container { min-height: auto; }
+          .login-showcase { height: min(36vh, 230px); min-height: 180px; padding: 1.1rem; }
+          .login-hero-logo { width: min(100%, 220px); max-height: 215px; }
+          .login-card-header h2 { font-size: 1.3rem; }
         }
         .login-card-header {
           margin-bottom: 1.1rem;
+          text-align: center;
         }
         .login-lock-badge {
           width: 2.75rem;
@@ -78,7 +90,7 @@ def render_login() -> None:
           display: grid;
           place-items: center;
           font-size: 1.25rem;
-          margin-bottom: 0.85rem;
+          margin: 0 auto 0.85rem;
         }
         .login-card-header h2 {
           margin: 0;
@@ -101,6 +113,19 @@ def render_login() -> None:
           font-size: 0.78rem;
           text-align: center;
         }
+        [data-testid="stTextInput"] button[aria-label="Show password"],
+        [data-testid="stTextInput"] button[aria-label="Hide password"] {
+          color: #475569 !important;
+          border: 0 !important;
+          border-radius: 7px !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+        [data-testid="stTextInput"] button[aria-label="Show password"]:hover,
+        [data-testid="stTextInput"] button[aria-label="Hide password"]:hover {
+          color: #0f172a !important;
+          background: #f1f5f9 !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -116,7 +141,7 @@ def render_login() -> None:
         else '<div class="login-lock-badge">🔨</div>'
     )
 
-    left_col, right_col = st.columns([1.25, 1], gap="large")
+    left_col, right_col = st.columns([1.25, 1], gap="large", vertical_alignment="center")
 
     with left_col:
         st.markdown(
