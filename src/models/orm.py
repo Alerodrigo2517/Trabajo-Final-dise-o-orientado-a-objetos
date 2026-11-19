@@ -155,6 +155,13 @@ class PresupuestoORM(Base):
         ),
         nullable=False,
     )
+    # Antares ya tiene esta FK histórica adicional; se conserva para no perder
+    # compatibilidad ni eliminar datos al migrar el esquema.
+    fk_cliente: Mapped[str] = mapped_column(
+        String(13),
+        ForeignKey("clientes.cuilt_cliente", name="fk_presupuesto_cliente_legacy"),
+        nullable=False,
+    )
     fk_cliente_contacto: Mapped[int] = mapped_column(
         ForeignKey(
             "clientes_contacto.id_contacto",
@@ -243,7 +250,7 @@ class DetallePresupuestoORM(Base):
     __table_args__ = (
         CheckConstraint("cantidad > 0", name="chk_detalle_presupuesto_cantidad"),
         CheckConstraint("precio_unitario >= 0", name="chk_detalle_presupuesto_precio"),
-        UniqueConstraint("fk_presupuesto", "fk_material", name="uq_detalle_presupuesto_material"),
+        UniqueConstraint("fk_presupuesto", "fk_materiales", name="uq_detalle_presupuesto_material"),
     )
 
     id_detalle: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -257,6 +264,7 @@ class DetallePresupuestoORM(Base):
         nullable=False,
     )
     fk_material: Mapped[int] = mapped_column(
+        "fk_materiales",
         ForeignKey(
             "materiales.id_material",
             name="fk_detalle_presupuesto_material",
@@ -267,6 +275,7 @@ class DetallePresupuestoORM(Base):
     )
     cantidad: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     precio_unitario: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    subtotal: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
 
     presupuesto: Mapped[PresupuestoORM] = relationship(back_populates="detalles")
     material: Mapped[MaterialORM] = relationship(back_populates="detalles_presupuesto")

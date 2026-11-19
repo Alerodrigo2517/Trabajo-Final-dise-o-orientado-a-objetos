@@ -63,9 +63,15 @@ def create_client(cuit: str, nombre: str, apellido: str) -> dict:
 
 
 def list_client_contacts(cuit: str) -> list[dict]:
-    normalized_cuit = normalize_cuit(cuit)
+    legacy_cuit = (cuit or "").strip()
+    try:
+        normalized_cuit = normalize_cuit(cuit)
+    except ValueError:
+        normalized_cuit = legacy_cuit
     with get_session() as session:
-        client = ClientRepository.get_by_cuit(session, normalized_cuit)
+        client = ClientRepository.get_by_cuit(session, legacy_cuit)
+        if client is None and normalized_cuit != legacy_cuit:
+            client = ClientRepository.get_by_cuit(session, normalized_cuit)
         if client is None:
             return []
         contacts = ClientRepository.contacts_for_client(session, client.cuit_cliente)

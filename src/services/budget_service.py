@@ -86,7 +86,15 @@ def create_budget(
     hours,
     materials: list[dict],
 ) -> int:
-    normalized_cuit = normalize_cuit(client_cuit)
+    legacy_cuit = (client_cuit or "").strip()
+    normalized_cuit = legacy_cuit
+    try:
+        normalized_cuit = normalize_cuit(client_cuit)
+    except ValueError:
+        # Hay CUIT históricos de 8 dígitos en la base activa. Se admiten para
+        # consultar/crear presupuestos existentes, sin cambiar la validación
+        # estricta del alta de clientes.
+        pass
     cleaned_work_address = clean_text(work_address, "la dirección del trabajo", 100)
     cleaned_work_city = clean_text(work_city, "la ciudad del trabajo", 100)
     cleaned_type = clean_text(work_type, "el tipo de trabajo", 50)
@@ -123,7 +131,9 @@ def create_budget(
 
     try:
         with get_session() as session:
-            client = ClientRepository.get_by_cuit(session, normalized_cuit)
+            client = ClientRepository.get_by_cuit(session, legacy_cuit)
+            if client is None and normalized_cuit != legacy_cuit:
+                client = ClientRepository.get_by_cuit(session, normalized_cuit)
             if client is None:
                 raise ValueError("El cliente seleccionado no existe. Actualizá la lista.")
 
@@ -155,6 +165,7 @@ def create_budget(
             budget = PresupuestoORM(
                 fecha_presupuesto=budget_date,
                 fecha_vencimiento=expiration_date,
+                fk_cliente=client.cuit_cliente,
                 cliente_contacto=contact,
                 ubicacion_trabajo=work_location,
                 tipo_trabajo=type_row,
@@ -165,6 +176,10 @@ def create_budget(
                 duracion_horas=duration,
                 estado="BORRADOR",
             )
+            # Asociar el objeto a la sesión antes de enlazar los detalles con
+            # materiales que ya están persistidos evita estados transitorios
+            # en las relaciones bidireccionales de SQLAlchemy.
+            session.add(budget)
             for material_id, quantity in merged_items.items():
                 material = BudgetRepository.get_material(session, material_id)
                 if material is None:
@@ -174,6 +189,7 @@ def create_budget(
                         material=material,
                         cantidad=quantity,
                         precio_unitario=material.precio_unitario,
+                        subtotal=quantity * Decimal(material.precio_unitario),
                     )
                 )
             BudgetRepository.create_budget(session, budget)
