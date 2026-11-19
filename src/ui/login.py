@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from src.core.config import settings
 from src.core.session import start_user_session
 from src.services.auth_service import AuthService
+from src.ui import get_logo_data_uri
 
 
 def render_login() -> None:
@@ -141,13 +142,29 @@ def render_login() -> None:
     if st.session_state.pop("_session_expired", False):
         st.warning("⏱️ Tu sesión venció por inactividad. Volvé a ingresar tus credenciales.")
 
+    logo_uri = get_logo_data_uri()
+    logo_hero_html = (
+        f'<img src="{logo_uri}" alt="Herrería Don Francisco" '
+        'style="width:118px;height:118px;object-fit:contain;border-radius:18px;'
+        'border:2px solid rgba(251,191,36,0.45);box-shadow:0 10px 25px rgba(0,0,0,0.45);margin-bottom:1.1rem;" />'
+        if logo_uri
+        else '<div class="login-brand-pill">🔨 HERRERÍA DON FRANCISCO</div>'
+    )
+    logo_badge_html = (
+        f'<img src="{logo_uri}" alt="Herrería Don Francisco" '
+        'style="width:54px;height:54px;object-fit:contain;border-radius:12px;'
+        'border:1px solid #fde68a;box-shadow:0 4px 12px rgba(15,23,42,0.12);margin-bottom:0.85rem;" />'
+        if logo_uri
+        else '<div class="login-lock-badge">🔐</div>'
+    )
+
     left_col, right_col = st.columns([1.25, 1], gap="large")
 
     with left_col:
         st.markdown(
             f"""
             <div class="login-showcase">
-              <div class="login-brand-pill">🔨 HERRERÍA DON FRANCISCO</div>
+              {logo_hero_html}
               <h1>Herrería Don Francisco</h1>
               <p class="lead">
                 Control integral del taller en tiempo real: desde la primera cotización y cálculo de materiales
@@ -179,9 +196,9 @@ def render_login() -> None:
     with right_col:
         with st.container(border=True):
             st.markdown(
-                """
+                f"""
                 <div class="login-card-header">
-                  <div class="login-lock-badge">🔐</div>
+                  {logo_badge_html}
                   <h2>Iniciar sesión</h2>
                   <p>Ingresá con tu cuenta asignada para acceder al panel.</p>
                 </div>

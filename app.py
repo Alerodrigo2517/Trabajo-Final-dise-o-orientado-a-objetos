@@ -17,7 +17,11 @@ from src.ui import (
 )
 from src.ui.login import render_login
 
-st.set_page_config(page_title="Herrería Don Francisco | Gestión del taller", page_icon="🔨", layout="wide")
+st.set_page_config(
+    page_title="Herrería Don Francisco | Gestión del taller",
+    page_icon="src/assets/logo_don_francisco.png",
+    layout="wide",
+)
 st.session_state["_database_error_shown"] = False
 apply_theme()
 
@@ -39,6 +43,7 @@ def inicio():
         f"Hola, {user['nombre']}",
         "Supervisá el estado del taller, confeccioná presupuestos vinculados con producción y registrá clientes en un solo lugar.",
         badge=f"Perfil: {user['role_label']}",
+        show_logo=True,
     )
     try:
         summary = get_dashboard_summary()

@@ -2,12 +2,50 @@
 
 from __future__ import annotations
 
+import base64
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
+LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "logo_don_francisco.png"
+
+
+@st.cache_data(show_spinner=False)
+def get_logo_data_uri() -> str:
+    if LOGO_PATH.exists():
+        encoded = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
+        return f"data:image/png;base64,{encoded}"
+    return ""
+
 
 def apply_theme() -> None:
+    logo_uri = get_logo_data_uri()
+    sidebar_brand_css = (
+        f"""
+        [data-testid="stSidebarNav"]::before {{
+          content: "";
+          display: block;
+          height: 64px;
+          margin: 0 1rem 0.75rem;
+          padding-bottom: 0.65rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          background-image:
+            url("{logo_uri}"),
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='52' viewBox='0 0 180 52'%3E%3Ctext x='0' y='23' fill='%23ffffff' font-family='Inter, system-ui, -apple-system, Segoe UI, sans-serif' font-size='17.5' font-weight='800' letter-spacing='-0.3'%3EHerrer%C3%ADa%3C/text%3E%3Ctext x='0' y='41' fill='%23fbbf24' font-family='Inter, system-ui, -apple-system, Segoe UI, sans-serif' font-size='10.5' font-weight='700' letter-spacing='1.6'%3EDON FRANCISCO%3C/text%3E%3C/svg%3E");
+          background-repeat: no-repeat, no-repeat;
+          background-position: left 2px, 58px 2px;
+          background-size: 48px 48px, 175px 50px;
+        }}
+        """
+        if logo_uri
+        else ""
+    )
+    st.markdown(
+        f"""<style>{sidebar_brand_css}</style>""",
+        unsafe_allow_html=True,
+    )
     st.markdown(
         """
         <style>
@@ -84,19 +122,6 @@ def apply_theme() -> None:
 
         [data-testid="stSidebarNav"] {
           padding-top: 0 !important;
-        }
-
-        [data-testid="stSidebarNav"]::before {
-          content: "";
-          display: block;
-          height: 60px;
-          margin: 0 1rem 0.75rem;
-          padding-bottom: 0.65rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='52' viewBox='0 0 240 52'%3E%3Crect x='2' y='4' width='44' height='44' rx='12' fill='%23d97706' fill-opacity='0.26' stroke='%23fbbf24' stroke-opacity='0.42'/%3E%3Ctext x='24' y='32' text-anchor='middle' font-size='21'%3E%F0%9F%94%A8%3C/text%3E%3Ctext x='58' y='23' fill='%23ffffff' font-family='Inter, system-ui, -apple-system, Segoe UI, sans-serif' font-size='17.5' font-weight='800' letter-spacing='-0.3'%3EHerrer%C3%ADa%3C/text%3E%3Ctext x='58' y='41' fill='%23fbbf24' font-family='Inter, system-ui, -apple-system, Segoe UI, sans-serif' font-size='10.5' font-weight='700' letter-spacing='1.6'%3EDON FRANCISCO%3C/text%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: left top;
-          background-size: 230px 50px;
         }
 
         [data-testid="stSidebarUserContent"] {
@@ -664,8 +689,36 @@ def apply_theme() -> None:
     )
 
 
-def page_header(eyebrow: str, title: str, description: str, badge: str | None = None) -> None:
+def page_header(
+    eyebrow: str,
+    title: str,
+    description: str,
+    badge: str | None = None,
+    *,
+    show_logo: bool = False,
+) -> None:
     badge_html = f'<span class="section-badge">{badge}</span>' if badge else ""
+    logo_uri = get_logo_data_uri() if show_logo else ""
+    if logo_uri:
+        st.markdown(
+            f"""
+            <div class="page-heading" style="display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap;">
+              <img src="{logo_uri}" alt="Herrería Don Francisco"
+                   style="width:88px;height:88px;object-fit:cover;border-radius:16px;border:2px solid #fde68a;box-shadow:0 6px 16px rgba(15,23,42,0.16);flex-shrink:0;" />
+              <div style="flex:1;min-width:240px;">
+                <div class="page-heading-top">
+                  <p class="eyebrow">⚡ {eyebrow}</p>
+                  {badge_html}
+                </div>
+                <h1>{title}</h1>
+                <p class="page-desc">{description}</p>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
+
     st.markdown(
         f"""
         <div class="page-heading">
