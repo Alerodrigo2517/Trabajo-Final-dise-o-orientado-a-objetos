@@ -141,6 +141,12 @@ def _client_field_changed(row_id: int) -> None:
 
 
 def client_entry_rows() -> None:
+    from src.core.authorization import can_write
+    from src.core.session import current_user
+
+    if not can_write(current_user()):
+        st.info("Tu perfil puede consultar clientes, pero no registrar ni modificar datos.")
+        return
     if "client_draft_rows" not in st.session_state:
         st.session_state.client_draft_rows = []
         st.session_state.client_row_sequence = 0

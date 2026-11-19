@@ -1,14 +1,21 @@
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
+from src.core.authorization import can_write
+from src.core.session import current_user
 from src.components.budget_form import render_budget_form
 from src.services.budget_service import PRESUPUESTO_ESTADOS, list_budgets, update_budget_status
 from src.ui import currency, database_error, page_header, records_table
 
+user = current_user()
+can_edit = can_write(user)
 page_header("VENTAS Y PLANIFICACIÓN", "Presupuestos", "Cada cotización queda relacionada con el cliente, el contacto, la ubicación y los materiales registrados en la base.")
 
-with st.container(border=True):
-    render_budget_form(key_prefix="pagina_presupuestos")
+if can_edit:
+    with st.container(border=True):
+        render_budget_form(key_prefix="pagina_presupuestos")
+else:
+    st.info("Tu perfil puede consultar presupuestos, pero no crear ni cambiar sus estados.")
 
 st.subheader("Presupuestos registrados")
 try:
@@ -31,7 +38,7 @@ try:
     ]
     records_table(rows, "presupuestos_db", "Todavía no hay presupuestos", "Creá el primero desde el formulario de arriba.")
 
-    if budgets:
+    if can_edit and budgets:
         st.subheader("Actualizar estado")
         budget_options = {
             f"#{budget['id_presupuesto']} · {budget['cliente']} · {budget['tipo_trabajo']}": budget

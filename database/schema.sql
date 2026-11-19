@@ -370,12 +370,13 @@ CREATE TABLE trabajos (
 
 CREATE TABLE usuarios (
     id_usuario INT NOT NULL AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL,
+    nombre VARCHAR(45) NOT NULL,
     usuario VARCHAR(45) NOT NULL,
 
-    -- Cambiamos "contraseña" por "contrasena_hash" para dejar claro que no vamos a guardar la contraseña original,
-    -- sino su hash generado desde la aplicación. A eso lo vamos a ver el cuatri que viene.
-    contrasena_hash VARCHAR(255) NOT NULL,
+    -- La columna existente conserva su nombre físico; Python la expone como contrasena_hash.
+    `contraseña` VARCHAR(255) NOT NULL,
+    rol ENUM('ADMINISTRADOR', 'OPERADOR', 'AUDITOR')
+        NOT NULL DEFAULT 'OPERADOR',
 
     CONSTRAINT pk_usuarios
         PRIMARY KEY (id_usuario),

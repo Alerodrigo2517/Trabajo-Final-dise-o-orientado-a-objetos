@@ -357,7 +357,13 @@ class UsuarioORM(Base):
     )
 
     id_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nombre: Mapped[str] = mapped_column(String(100), nullable=False)
+    nombre: Mapped[str] = mapped_column(String(45), nullable=False)
     usuario: Mapped[str] = mapped_column(String(45), nullable=False)
-    contrasena_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    contrasena_hash: Mapped[str] = mapped_column("contraseña", String(255), nullable=False)
+    rol: Mapped[str] = mapped_column(
+        SqlEnum("ADMINISTRADOR", "OPERADOR", "AUDITOR", name="rol_usuario"),
+        nullable=False,
+        default="OPERADOR",
+        server_default="OPERADOR",
+    )
 

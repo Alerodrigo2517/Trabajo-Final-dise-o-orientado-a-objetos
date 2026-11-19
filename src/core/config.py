@@ -25,7 +25,7 @@ def database_url_from_environment() -> str | URL:
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class Settings:
     app_env: str = field(default_factory=lambda: os.getenv("APP_ENV", "development"))
     app_name: str = field(default_factory=lambda: os.getenv("APP_NAME", "Sistema de Herrería"))
@@ -39,8 +39,6 @@ class Settings:
     fernet_key: str = field(default_factory=lambda: os.getenv("FERNET_KEY", ""))
     bcrypt_rounds: int = field(default_factory=lambda: int(os.getenv("BCRYPT_ROUNDS", "12")))
     session_timeout_minutes: int = field(default_factory=lambda: int(os.getenv("SESSION_TIMEOUT_MINUTES", "60")))
-    max_login_attempts: int = field(default_factory=lambda: int(os.getenv("MAX_LOGIN_ATTEMPTS", "5")))
-    lock_account_minutes: int = field(default_factory=lambda: int(os.getenv("LOCK_ACCOUNT_MINUTES", "60")))
     database_url: str | URL = field(default_factory=database_url_from_environment)
 
 

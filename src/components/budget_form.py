@@ -6,12 +6,17 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
+from src.core.authorization import can_write
+from src.core.session import current_user
 from src.services.budget_service import create_budget, list_budgets, materials_for_budget
 from src.services.client_service import list_client_contacts, list_clients
 from src.ui import currency, handle_database_error
 
 
 def render_budget_form(*, key_prefix: str = "presupuesto", compact: bool = False) -> None:
+    if not can_write(current_user()):
+        st.info("Tu perfil puede consultar presupuestos, pero no crear ni modificar datos.")
+        return
     try:
         clients = list_clients()
         materials = materials_for_budget()
