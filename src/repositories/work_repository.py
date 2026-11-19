@@ -1,5 +1,7 @@
 """Consultas y persistencia de trabajos."""
 
+from datetime import date
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
@@ -34,4 +36,20 @@ class WorkRepository:
     @staticmethod
     def work_for_budget(session: Session, budget_id: int) -> TrabajoORM | None:
         return session.scalar(select(TrabajoORM).where(TrabajoORM.fk_presupuesto == budget_id))
+
+    @staticmethod
+    def update_work(
+        session: Session,
+        work: TrabajoORM,
+        *,
+        status: str,
+        start_date: date | None,
+        end_date: date | None,
+        observations: str | None,
+    ) -> None:
+        work.estado = status
+        work.fecha_inicio = start_date
+        work.fecha_fin = end_date
+        work.observaciones = observations
+        session.flush()
 

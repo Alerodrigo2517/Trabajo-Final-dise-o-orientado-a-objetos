@@ -1,7 +1,7 @@
 from __future__ import annotations
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from src.core.config import settings
@@ -40,7 +40,4 @@ def get_session():
 
 def test_connection() -> bool:
     with engine.connect() as connection:
-        result = connection.execute(
-            text("select 1")
-        )
-        return result.scalar_one() == 1
+        return connection.scalar(select(1)) == 1

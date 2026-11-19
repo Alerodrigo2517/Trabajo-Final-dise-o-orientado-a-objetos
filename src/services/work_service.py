@@ -74,9 +74,12 @@ def update_work(
         work = WorkRepository.get_work(session, int(work_id))
         if work is None:
             raise ValueError("La orden de trabajo ya no existe.")
-        work.estado = status
-        work.fecha_inicio = start_date
-        work.fecha_fin = end_date
-        work.observaciones = cleaned_observations or None
-        session.flush()
+        WorkRepository.update_work(
+            session,
+            work,
+            status=status,
+            start_date=start_date,
+            end_date=end_date,
+            observations=cleaned_observations or None,
+        )
 
