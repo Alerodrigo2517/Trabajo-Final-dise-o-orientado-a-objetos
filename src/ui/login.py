@@ -147,8 +147,8 @@ def render_login() -> None:
         st.markdown(
             f"""
             <div class="login-showcase">
-              <div class="login-brand-pill">🔨 PLATAFORMA DE GESTIÓN INDUSTRIAL</div>
-              <h1>{settings.app_name}</h1>
+              <div class="login-brand-pill">🔨 HERRERÍA DON FRANCISCO</div>
+              <h1>Herrería Don Francisco</h1>
               <p class="lead">
                 Control integral del taller en tiempo real: desde la primera cotización y cálculo de materiales
                 hasta la orden de producción y seguimiento de cobros.

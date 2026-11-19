@@ -71,49 +71,43 @@ def apply_theme() -> None:
           border-right: 1px solid rgba(255, 255, 255, 0.08);
         }
 
+        [data-testid="stSidebarContent"] {
+          display: flex !important;
+          flex-direction: column !important;
+        }
+
+        [data-testid="stSidebarHeader"] {
+          height: 2rem !important;
+          min-height: 2rem !important;
+          padding-bottom: 0 !important;
+        }
+
+        [data-testid="stSidebarNav"] {
+          padding-top: 0 !important;
+        }
+
+        [data-testid="stSidebarNav"]::before {
+          content: "";
+          display: block;
+          height: 60px;
+          margin: 0 1rem 0.75rem;
+          padding-bottom: 0.65rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='52' viewBox='0 0 240 52'%3E%3Crect x='2' y='4' width='44' height='44' rx='12' fill='%23d97706' fill-opacity='0.26' stroke='%23fbbf24' stroke-opacity='0.42'/%3E%3Ctext x='24' y='32' text-anchor='middle' font-size='21'%3E%F0%9F%94%A8%3C/text%3E%3Ctext x='58' y='23' fill='%23ffffff' font-family='Inter, system-ui, -apple-system, Segoe UI, sans-serif' font-size='17.5' font-weight='800' letter-spacing='-0.3'%3EHerrer%C3%ADa%3C/text%3E%3Ctext x='58' y='41' fill='%23fbbf24' font-family='Inter, system-ui, -apple-system, Segoe UI, sans-serif' font-size='10.5' font-weight='700' letter-spacing='1.6'%3EDON FRANCISCO%3C/text%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: left top;
+          background-size: 230px 50px;
+        }
+
+        [data-testid="stSidebarUserContent"] {
+          margin-top: auto !important;
+          padding-top: 0.25rem !important;
+          padding-bottom: 1.25rem !important;
+        }
+
         [data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
         [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
           color: #cbd5e1;
-        }
-
-        .brand-lockup {
-          display: flex;
-          align-items: center;
-          gap: 0.85rem;
-          padding: 0.5rem 0.35rem 0.65rem;
-        }
-
-        .brand-mark {
-          display: grid;
-          width: 2.75rem;
-          height: 2.75rem;
-          place-items: center;
-          border: 1px solid rgba(251, 191, 36, 0.35);
-          border-radius: 12px;
-          background: linear-gradient(135deg, rgba(217, 119, 6, 0.28) 0%, rgba(180, 83, 9, 0.14) 100%);
-          box-shadow: 0 4px 12px rgba(217, 119, 6, 0.18);
-          font-size: 1.35rem;
-        }
-
-        .brand-copy {
-          display: flex;
-          flex-direction: column;
-          gap: 0.15rem;
-        }
-
-        .brand-copy strong {
-          color: #ffffff;
-          font-size: 1.12rem;
-          font-weight: 800;
-          letter-spacing: -0.025em;
-        }
-
-        .brand-copy small {
-          color: #fbbf24;
-          font-size: 0.62rem;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
         }
 
         .sidebar-user-card {

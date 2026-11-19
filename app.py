@@ -17,7 +17,7 @@ from src.ui import (
 )
 from src.ui.login import render_login
 
-st.set_page_config(page_title="Herrería | Gestión del taller", page_icon="🔨", layout="wide")
+st.set_page_config(page_title="Herrería Don Francisco | Gestión del taller", page_icon="🔨", layout="wide")
 st.session_state["_database_error_shown"] = False
 apply_theme()
 
@@ -26,16 +26,11 @@ if user is None:
     render_login()
     st.stop()
 
-st.sidebar.markdown(
-    '<div class="brand-lockup"><span class="brand-mark">🔨</span>'
-    '<span class="brand-copy"><strong>Herrería</strong><small>GESTIÓN INDUSTRIAL</small></span></div>',
-    unsafe_allow_html=True,
-)
+st.sidebar.divider()
 render_sidebar_user(user)
 if st.sidebar.button("🚪 Cerrar sesión", width="stretch"):
     logout_user()
     st.rerun()
-st.sidebar.divider()
 
 
 def inicio():
