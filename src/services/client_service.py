@@ -1,11 +1,13 @@
 """Reglas de negocio para clientes y sus datos de contacto."""
 
+from datetime import date
 import re
 
 from sqlalchemy.exc import IntegrityError
 
 from src.core.database import get_session
 from src.core.validators import clean_text, display_cuit, normalize_cuit
+from src.repositories.budget_repository import BudgetRepository
 from src.repositories.client_repository import ClientRepository
 
 
@@ -35,10 +37,26 @@ def list_clients() -> list[dict]:
         ]
 
 
-def create_client(cuit: str, nombre: str, apellido: str) -> dict:
+def create_client(
+    cuit: str,
+    nombre: str,
+    apellido: str,
+    direccion: str = "",
+    ciudad: str = "",
+    telefono: str = "",
+) -> dict:
     normalized_cuit = normalize_cuit(cuit)
     cleaned_name = clean_text(nombre, "el nombre", 45)
     cleaned_surname = clean_text(apellido, "el apellido", 45)
+
+    has_contact_data = any((direccion or "").strip() or (ciudad or "").strip() or (telefono or "").strip() for _ in [0])
+    cleaned_address = ""
+    cleaned_city = ""
+    cleaned_phone = ""
+    if has_contact_data:
+        cleaned_address = clean_text(direccion, "la dirección del cliente", 100)
+        cleaned_city = clean_text(ciudad, "la ciudad del cliente", 100)
+        cleaned_phone = clean_text(telefono, "el teléfono del cliente", 20)
 
     try:
         with get_session() as session:
@@ -51,6 +69,16 @@ def create_client(cuit: str, nombre: str, apellido: str) -> dict:
                 nombre=cleaned_name,
                 apellido=cleaned_surname,
             )
+            if has_contact_data:
+                city_orm = BudgetRepository.get_or_create_city(session, cleaned_city)
+                BudgetRepository.create_client_contact(
+                    session,
+                    client_cuit=client.cuit_cliente,
+                    address=cleaned_address,
+                    city=city_orm,
+                    phone=cleaned_phone,
+                    start_date=date.today(),
+                )
             return {
                 "cuit_cliente": client.cuit_cliente,
                 "cuit_display": display_cuit(client.cuit_cliente),
@@ -86,4 +114,3 @@ def list_client_contacts(cuit: str) -> list[dict]:
             }
             for contact in contacts
         ]
-

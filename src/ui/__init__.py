@@ -815,95 +815,54 @@ def records_table(records: list[dict], key: str, empty_title: str, empty_descrip
     st.dataframe(frame, hide_index=True, width="stretch")
 
 
-def _append_client_row() -> None:
-    row_id = int(st.session_state.get("client_row_sequence", 0))
-    st.session_state.client_draft_rows.append({"id": row_id, "saved": False})
-    st.session_state.client_row_sequence = row_id + 1
-
-
-def _client_field_changed(row_id: int) -> None:
-    rows = st.session_state.client_draft_rows
-    row = next((item for item in rows if item["id"] == row_id), None)
-    if row is None or row["saved"]:
-        return
-
-    values = {
-        field: str(st.session_state.get(f"client_{row_id}_{field}", "")).strip()
-        for field in ("nombre", "apellido", "cuit")
-    }
-    has_content = any(values.values())
-    if has_content and rows[-1]["id"] == row_id:
-        _append_client_row()
-
-    if not all(values.values()):
-        return
-
-    try:
-        from src.services.client_service import create_client
-
-        create_client(values["cuit"], values["nombre"], values["apellido"])
-    except ValueError as error:
-        st.session_state.client_feedback = ("error", str(error))
-    except SQLAlchemyError:
-        st.session_state.client_feedback = (
-            "error",
-            "No se pudo guardar el cliente en la base de datos. Revisá la conexión e intentá de nuevo.",
-        )
-    else:
-        row["saved"] = True
-        st.session_state.client_feedback = ("success", "Cliente guardado automáticamente en la base de datos.")
-        if rows[-1]["id"] == row_id:
-            _append_client_row()
-
-
-def client_entry_rows() -> None:
+def client_entry_rows(*, key_prefix: str = "client") -> None:
     from src.core.authorization import can_write
     from src.core.session import current_user
+    from src.services.client_service import create_client
 
     if not can_write(current_user()):
         st.info("Tu perfil puede consultar clientes, pero no registrar ni modificar datos.")
         return
-    if "client_draft_rows" not in st.session_state:
-        st.session_state.client_draft_rows = []
-        st.session_state.client_row_sequence = 0
-        _append_client_row()
 
-    st.caption(
-        "Completá Nombre, Apellido y CUIT en una fila. Al completar los 3 campos se guarda automáticamente en MySQL y se habilita una nueva fila."
+    section_header(
+        "Registrar nuevo cliente",
+        "Completá la identificación fiscal del cliente y, opcionalmente, su domicilio y teléfono inicial.",
+        icon="👥",
+        badge="Alta de cliente",
     )
-    if "client_feedback" in st.session_state:
-        kind, message = st.session_state.pop("client_feedback")
-        getattr(st, kind)(message)
 
-    heading = st.columns([1, 1, 1, 0.14])
-    for column, label in zip(heading[:3], ("NOMBRE", "APELLIDO", "CUIT / CUIL")):
-        column.markdown(f'<p class="panel-heading">{label}</p>', unsafe_allow_html=True)
-    heading[3].markdown('<p class="panel-heading" style="text-align:center;">ESTADO</p>', unsafe_allow_html=True)
+    with st.form(f"{key_prefix}_create_client_form", clear_on_submit=True):
+        st.markdown('<p class="panel-heading">IDENTIFICACIÓN FISCAL Y PERSONAL</p>', unsafe_allow_html=True)
+        col_name, col_surname, col_cuit = st.columns(3)
+        with col_name:
+            first_name = st.text_input("Nombre", placeholder="Ej. Martín", max_chars=45)
+        with col_surname:
+            last_name = st.text_input("Apellido", placeholder="Ej. Rodríguez", max_chars=45)
+        with col_cuit:
+            cuit = st.text_input("CUIT / CUIL (11 dígitos)", placeholder="Ej. 20-12345678-9", max_chars=13)
 
-    for position, row in enumerate(st.session_state.client_draft_rows):
-        row_id = row["id"]
-        columns = st.columns([1, 1, 1, 0.14])
-        for column, field, placeholder in zip(
-            columns[:3],
-            ("nombre", "apellido", "cuit"),
-            ("Ej. Martín", "Ej. Rodríguez", "20-12345678-9"),
-        ):
-            column.text_input(
-                f"{field.title()} {position + 1}",
-                key=f"client_{row_id}_{field}",
-                placeholder=placeholder,
-                label_visibility="collapsed",
-                disabled=row["saved"],
-                on_change=_client_field_changed,
-                args=(row_id,),
+        st.markdown('<p class="panel-heading" style="margin-top:0.65rem;">DOMICILIO Y TELÉFONO DE CONTACTO (OPCIONAL)</p>', unsafe_allow_html=True)
+        st.caption("Si completás estos campos, el contacto quedará registrado en `clientes_contacto` listo para asociar a presupuestos.")
+        col_addr, col_city, col_phone = st.columns([1.2, 1, 1])
+        with col_addr:
+            address = st.text_input("Dirección del cliente", placeholder="Calle y número", max_chars=100)
+        with col_city:
+            city = st.text_input("Ciudad / Localidad", placeholder="Localidad", max_chars=100)
+        with col_phone:
+            phone = st.text_input("Teléfono del cliente", placeholder="Código de área + número", max_chars=20)
+
+        submitted = st.form_submit_button("💾 Guardar cliente", type="primary", width="stretch")
+
+    if submitted:
+        try:
+            saved = create_client(
+                cuit=cuit,
+                nombre=first_name,
+                apellido=last_name,
+                direccion=address,
+                ciudad=city,
+                telefono=phone,
             )
-        if row["saved"]:
-            columns[3].markdown(
-                '<div style="display:flex;justify-content:center;"><span class="row-status-pill row-status-saved" title="Guardado">✓</span></div>',
-                unsafe_allow_html=True,
-            )
-        elif position == len(st.session_state.client_draft_rows) - 1:
-            columns[3].markdown(
-                '<div style="display:flex;justify-content:center;"><span class="row-status-pill row-status-new" title="Fila activa">＋</span></div>',
-                unsafe_allow_html=True,
-            )
+            st.success(f"✅ Cliente {saved['nombre_completo']} ({saved['cuit_display']}) guardado en la base de datos.")
+        except (ValueError, SQLAlchemyError) as error:
+            handle_database_error(error)

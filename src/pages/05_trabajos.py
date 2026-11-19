@@ -20,7 +20,7 @@ can_edit = can_write(current_user())
 page_header(
     "TALLER Y PRODUCCIÓN",
     "Órdenes de Trabajo",
-    "Convertí presupuestos aprobados en órdenes de fabricación y hacé el seguimiento de avance hasta la entrega final.",
+    "Iniciá órdenes de fabricación a partir de presupuestos aprobados y gestioná el avance de obra hasta su finalización.",
     badge="Módulo Producción",
 )
 
@@ -38,72 +38,114 @@ finished_works = sum(1 for w in works if w["estado"] in ("FINALIZADO", "ENTREGAD
 
 kpis = st.columns(4)
 with kpis[0]:
-    kpi_card("Órdenes totales", len(works), "Registradas en el taller", icon="🛠️", tone="slate")
+    kpi_card("Total órdenes", len(works), "Registradas en el taller", icon="🛠️", tone="amber")
 with kpis[1]:
-    kpi_card("En fabricación", active_works, "Pendientes o en proceso", icon="⚙️", tone="blue")
-with kpis[2]:
     kpi_card("Finalizadas", finished_works, "Trabajos concluidos", icon="✅", tone="emerald")
+with kpis[2]:
+    kpi_card("En fabricación", active_works, "Pendientes o en proceso", icon="⚙️", tone="blue")
 with kpis[3]:
-    kpi_card("Listos para iniciar", len(eligible), "Presupuestos aprobados sin orden", icon="🚀", tone="amber")
+    kpi_card("Listos para iniciar", len(eligible), "Presupuestos aprobados sin orden", icon="🚀", tone="slate")
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
 if can_edit:
-    col_create, col_update = st.columns(2, gap="large")
-    with col_create:
+    tab_list, tab_new = st.tabs(
+        [
+            "📋 Historial y estados de órdenes",
+            f"➕ Iniciar nueva orden de trabajo ({len(eligible)})",
+        ]
+    )
+else:
+    st.info("👁️ Tu perfil puede consultar las órdenes de trabajo, pero no crear órdenes ni cambiar sus estados.")
+    tab_list = st.container()
+    tab_new = None
+
+if tab_new is not None:
+    with tab_new:
         with st.container(border=True):
             section_header(
-                "Iniciar nueva orden de trabajo",
-                "Generá una orden a partir de un presupuesto aprobado.",
+                "Apertura de orden de trabajo",
+                "Seleccioná un presupuesto aprobado para generar su orden de fabricación en el taller.",
                 icon="🚀",
-                badge=f"{len(eligible)} disponibles",
+                badge=f"{len(eligible)} presupuestos disponibles",
             )
             if eligible:
                 budget_options = {
                     f"#{budget['id_presupuesto']} · {budget['cliente']} · {budget['tipo_trabajo']} ({currency(budget['total_estimado'])})": budget
                     for budget in eligible
                 }
+                selected_budget_label = st.selectbox(
+                    "1. Seleccionar presupuesto aprobado",
+                    list(budget_options),
+                    key="create_work_budget_selector",
+                )
+                target_budget = budget_options[selected_budget_label]
+
                 with st.form("create_work_form"):
-                    selected_label = st.selectbox("Presupuesto aprobado", list(budget_options))
-                    start_date = st.date_input("Fecha de inicio de fabricación", value=date.today())
+                    st.markdown('<p class="panel-heading">RESUMEN DEL PRESUPUESTO VINCULADO</p>', unsafe_allow_html=True)
+                    info_c1, info_c2 = st.columns(2)
+                    with info_c1:
+                        st.text_input("Cliente", value=target_budget["cliente"], disabled=True)
+                        st.text_input("Tipo de trabajo", value=target_budget["tipo_trabajo"], disabled=True)
+                    with info_c2:
+                        st.text_input(
+                            "Ubicación de obra",
+                            value=f"{target_budget['ubicacion']}, {target_budget['ciudad']}",
+                            disabled=True,
+                        )
+                        st.text_input(
+                            "Total presupuestado",
+                            value=currency(target_budget["total_estimado"]),
+                            disabled=True,
+                        )
+
+                    st.markdown('<p class="panel-heading" style="margin-top:0.65rem;">PLANIFICACIÓN DE TALLER</p>', unsafe_allow_html=True)
+                    start_date = st.date_input("Fecha programada de inicio", value=date.today())
                     observations = st.text_area(
-                        "Observaciones de taller",
+                        "Observaciones e instrucciones de fabricación",
                         max_chars=500,
-                        height=90,
-                        placeholder="Prioridad, responsable asignado, notas de corte o montaje…",
+                        height=95,
+                        placeholder="Prioridad, operario asignado, detalles de corte, soldadura o montaje en obra…",
                     )
                     create = st.form_submit_button("🛠️ Crear orden de trabajo", type="primary", width="stretch")
                 if create:
                     try:
                         work_id = create_work(
-                            budget_id=budget_options[selected_label]["id_presupuesto"],
+                            budget_id=target_budget["id_presupuesto"],
                             start_date=start_date,
                             observations=observations,
                         )
-                        st.success(f"✅ Orden de trabajo #{work_id} iniciada correctamente.")
+                        st.success(f"✅ Orden de trabajo #{work_id} creada exitosamente.")
                         st.rerun()
                     except (ValueError, SQLAlchemyError) as error:
                         database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))
             else:
-                st.info("No hay presupuestos aprobados pendientes de iniciar orden. Aprobá primero una cotización en Presupuestos.")
+                st.info("No hay presupuestos aprobados pendientes de iniciar orden. Aprobá primero una cotización en la sección Presupuestos.")
+                st.page_link("src/pages/02_presupuestos.py", label="Ir a Presupuestos", icon="📐")
 
-    with col_update:
+with tab_list:
+    if can_edit and works:
         with st.container(border=True):
             section_header(
-                "Actualizar orden existente",
-                "Modificá el estado de avance, fecha de cierre u observaciones.",
+                "Actualizar estado y seguimiento de orden",
+                "Modificá la etapa de producción, fechas de ejecución y notas técnicas de una orden activa.",
                 icon="🔄",
-                badge="Seguimiento",
+                badge="Gestión de estado",
             )
-            if works:
-                work_options = {
-                    f"#{work['id_trabajo']} · {work['cliente']} · {work['trabajo']} ({work['estado'].replace('_', ' ').title()})": work
-                    for work in works
-                }
+            work_options = {
+                f"#{work['id_trabajo']} · {work['cliente']} · {work['trabajo']} ({work['estado'].replace('_', ' ').title()})": work
+                for work in works
+            }
+            col_sel, col_form = st.columns([1.15, 1.35], gap="large")
+            with col_sel:
                 selected_label = st.selectbox("Seleccionar orden de trabajo", list(work_options), key="work_update_selection")
                 selected_work = work_options[selected_label]
+                st.caption(
+                    f"Presupuesto: **#{selected_work['id_presupuesto']}** · Cliente: **{selected_work['cliente']}** · "
+                    f"Ubicación: **{selected_work['ubicacion']}, {selected_work['ciudad']}**"
+                )
                 finish = st.checkbox(
-                    "Registrar fecha de finalización",
+                    "Incluir fecha de finalización",
                     value=selected_work["fecha_fin"] is not None,
                     key=f"work_finish_{selected_work['id_trabajo']}",
                 )
@@ -114,29 +156,31 @@ if can_edit:
                         value=selected_work["fecha_fin"] or date.today(),
                         key=f"work_end_{selected_work['id_trabajo']}",
                     )
+
+            with col_form:
                 with st.form(f"work_update_form_{selected_work['id_trabajo']}"):
-                    col_s, col_d = st.columns(2)
-                    with col_s:
+                    f_col1, f_col2 = st.columns(2)
+                    with f_col1:
                         status = st.selectbox(
-                            "Estado de la orden",
+                            "Nuevo estado",
                             WORK_STATES,
                             index=WORK_STATES.index(selected_work["estado"]),
                             format_func=lambda value: value.replace("_", " ").title(),
                         )
-                    with col_d:
+                    with f_col2:
                         start_date = st.date_input(
                             "Fecha de inicio",
                             value=selected_work["fecha_inicio"] or date.today(),
                             key=f"work_start_{selected_work['id_trabajo']}",
                         )
                     observations = st.text_area(
-                        "Observaciones técnicas",
+                        "Observaciones de avance",
                         value=selected_work["observaciones"],
                         max_chars=500,
                         height=75,
                         key=f"work_observations_{selected_work['id_trabajo']}",
                     )
-                    update = st.form_submit_button("💾 Guardar cambios", type="primary", width="stretch")
+                    update = st.form_submit_button("Guardar cambios de la orden", type="primary", width="stretch")
                 if update:
                     try:
                         update_work(
@@ -146,38 +190,34 @@ if can_edit:
                             end_date=end_date,
                             observations=observations,
                         )
-                        st.success("✅ Orden de trabajo actualizada.")
+                        st.success("✅ Orden de trabajo actualizada correctamente.")
                         st.rerun()
                     except (ValueError, SQLAlchemyError) as error:
                         database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))
-            else:
-                st.info("Todavía no hay órdenes de trabajo activas para actualizar.")
-else:
-    st.info("👁️ Tu perfil puede consultar las órdenes de trabajo, pero no crear ni cambiar sus estados.")
 
-with st.container(border=True):
-    section_header(
-        "Tablero de trabajos registrados",
-        "Seguimiento de órdenes vinculadas a presupuestos y clientes.",
-        icon="📋",
-        badge=f"{len(works)} órdenes",
-    )
-    work_rows = [
-        {
-            "N.º": work["id_trabajo"],
-            "Presupuesto": f"#{work['id_presupuesto']}",
-            "Cliente": work["cliente"],
-            "Trabajo": work["trabajo"],
-            "Ubicación": f"{work['ubicacion']}, {work['ciudad']}",
-            "Inicio": work["fecha_inicio"],
-            "Fin": work["fecha_fin"] or "En curso",
-            "Estado": work["estado"].replace("_", " ").title(),
-        }
-        for work in works
-    ]
-    records_table(
-        work_rows,
-        "works",
-        "Todavía no hay órdenes de trabajo",
-        "Cuando apruebes un presupuesto, vas a poder iniciar su orden de fabricación desde esta pantalla.",
-    )
+    with st.container(border=True):
+        section_header(
+            "Registro histórico de órdenes de trabajo",
+            "Listado completo de trabajos con sus fechas de inicio, finalización y estado actual.",
+            icon="📊",
+            badge=f"{len(works)} órdenes",
+        )
+        work_rows = [
+            {
+                "N.º": work["id_trabajo"],
+                "Presupuesto": f"#{work['id_presupuesto']}",
+                "Cliente": work["cliente"],
+                "Trabajo": work["trabajo"],
+                "Ubicación": f"{work['ubicacion']}, {work['ciudad']}",
+                "Inicio": work["fecha_inicio"],
+                "Fin": work["fecha_fin"] or "En curso",
+                "Estado": work["estado"].replace("_", " ").title(),
+            }
+            for work in works
+        ]
+        records_table(
+            work_rows,
+            "works",
+            "Todavía no hay órdenes de trabajo registradas",
+            "Abrí la pestaña «Iniciar nueva orden de trabajo» para poner en marcha un presupuesto aprobado.",
+        )

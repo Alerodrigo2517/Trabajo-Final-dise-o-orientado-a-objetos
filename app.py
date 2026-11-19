@@ -37,7 +37,7 @@ def inicio():
     page_header(
         "CENTRO DE OPERACIONES",
         f"Hola, {user['nombre']}",
-        "Supervisá el estado del taller, registrá clientes al instante y confeccioná presupuestos vinculados con producción y caja.",
+        "Supervisá el estado del taller, confeccioná presupuestos vinculados con producción y registrá clientes en un solo lugar.",
         badge=f"Perfil: {user['role_label']}",
     )
     try:
@@ -80,50 +80,66 @@ def inicio():
 
     st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
-    with st.container(border=True):
-        section_header(
-            "Navegación rápida del taller",
-            "Accedé directamente a los módulos operativos del sistema.",
-            icon="🧭",
-            badge="Módulos",
-        )
-        links = st.columns(5)
-        for column, path, label, icon in zip(
-            links,
-            (
-                "src/pages/02_presupuestos.py",
-                "src/pages/03_materiales.py",
-                "src/pages/07_proveedores.py",
-                "src/pages/04_pagos.py",
-                "src/pages/05_trabajos.py",
-            ),
-            (
-                "Historial de presupuestos",
-                "Catálogo de materiales",
-                "Directorio de proveedores",
-                "Caja y registro de pagos",
-                "Órdenes de trabajo",
-            ),
-            ("📐", "🧱", "🏭", "💳", "🛠️"),
-        ):
-            column.page_link(path, label=label, icon=icon)
-
     if user.get("role") == AUDITOR:
         st.info("👁️ Estás en modo consulta (Auditor): podés explorar todos los módulos sin modificar registros.")
+        tab_modules = st.container()
+        tab_budget = None
+        tab_client = None
     else:
-        left, right = st.columns([1, 1.15], gap="large")
-        with left:
+        tab_budget, tab_client, tab_modules = st.tabs(
+            [
+                "📐 Crear presupuesto rápido",
+                "👥 Alta rápida de clientes",
+                "🧭 Accesos directos del taller",
+            ]
+        )
+
+    if tab_budget is not None:
+        with tab_budget:
             with st.container(border=True):
-                section_header(
-                    "Alta rápida de Clientes",
-                    "Guardado automático al completar cada fila.",
-                    icon="👥",
-                    badge="Clientes",
-                )
-                client_entry_rows()
-        with right:
+                render_budget_form(key_prefix="inicio_presupuesto", compact=False)
+
+    if tab_client is not None:
+        with tab_client:
             with st.container(border=True):
-                render_budget_form(key_prefix="inicio_presupuesto", compact=True)
+                client_entry_rows(key_prefix="inicio_clientes")
+
+    with tab_modules:
+        with st.container(border=True):
+            section_header(
+                "Módulos operativos del taller",
+                "Accedé directamente a cada sección de gestión comercial, producción y abastecimiento.",
+                icon="🧭",
+                badge="Navegación",
+            )
+            row1 = st.columns(3, gap="medium")
+            with row1[0]:
+                st.markdown('<p class="panel-heading">COMERCIAL</p>', unsafe_allow_html=True)
+                st.page_link("src/pages/01_clientes.py", label="Padrón de Clientes", icon="👥")
+                st.caption("Consulta de clientes, CUIT y domicilios asociados.")
+            with row1[1]:
+                st.markdown('<p class="panel-heading">COTIZACIONES</p>', unsafe_allow_html=True)
+                st.page_link("src/pages/02_presupuestos.py", label="Historial de Presupuestos", icon="📐")
+                st.caption("Creación de presupuestos y actualización de estados.")
+            with row1[2]:
+                st.markdown('<p class="panel-heading">PRODUCCIÓN</p>', unsafe_allow_html=True)
+                st.page_link("src/pages/05_trabajos.py", label="Órdenes de Trabajo", icon="🛠️")
+                st.caption("Seguimiento de fabricación y fechas de entrega.")
+
+            st.divider()
+            row2 = st.columns(3, gap="medium")
+            with row2[0]:
+                st.markdown('<p class="panel-heading">TESORERÍA</p>', unsafe_allow_html=True)
+                st.page_link("src/pages/04_pagos.py", label="Caja y Pagos", icon="💳")
+                st.caption("Registro de cobros, anticipos y saldos pendientes.")
+            with row2[1]:
+                st.markdown('<p class="panel-heading">INSUMOS</p>', unsafe_allow_html=True)
+                st.page_link("src/pages/03_materiales.py", label="Catálogo de Materiales", icon="🧱")
+                st.caption("Precios unitarios de referencia para cotizar.")
+            with row2[2]:
+                st.markdown('<p class="panel-heading">COMPRAS</p>', unsafe_allow_html=True)
+                st.page_link("src/pages/07_proveedores.py", label="Directorio de Proveedores", icon="🏭")
+                st.caption("Empresas proveedoras, rubros y teléfonos.")
 
 
 paginas = {
