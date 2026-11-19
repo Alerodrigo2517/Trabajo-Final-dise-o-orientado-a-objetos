@@ -92,22 +92,24 @@ def inicio():
             icon="🧭",
             badge="Módulos",
         )
-        links = st.columns(4)
+        links = st.columns(5)
         for column, path, label, icon in zip(
             links,
             (
                 "src/pages/02_presupuestos.py",
                 "src/pages/03_materiales.py",
+                "src/pages/07_proveedores.py",
                 "src/pages/04_pagos.py",
                 "src/pages/05_trabajos.py",
             ),
             (
                 "Historial de presupuestos",
                 "Catálogo de materiales",
+                "Directorio de proveedores",
                 "Caja y registro de pagos",
                 "Órdenes de trabajo",
             ),
-            ("📐", "🧱", "💳", "🛠️"),
+            ("📐", "🧱", "🏭", "💳", "🛠️"),
         ):
             column.page_link(path, label=label, icon=icon)
 
@@ -129,16 +131,23 @@ def inicio():
                 render_budget_form(key_prefix="inicio_presupuesto", compact=True)
 
 
-paginas = [
-    st.Page(inicio, title="Inicio", icon=":material/home:"),
-    st.Page("src/pages/01_clientes.py", title="Clientes", icon=":material/groups:"),
-    st.Page("src/pages/02_presupuestos.py", title="Presupuestos", icon=":material/request_quote:"),
-    st.Page("src/pages/03_materiales.py", title="Materiales y proveedores", icon=":material/inventory_2:"),
-    st.Page("src/pages/04_pagos.py", title="Pagos", icon=":material/payments:"),
-    st.Page("src/pages/05_trabajos.py", title="Trabajos", icon=":material/engineering:"),
-]
+paginas = {
+    "Gestión del taller": [
+        st.Page(inicio, title="Inicio", icon=":material/home:"),
+        st.Page("src/pages/01_clientes.py", title="Clientes", icon=":material/groups:"),
+        st.Page("src/pages/02_presupuestos.py", title="Presupuestos", icon=":material/request_quote:"),
+        st.Page("src/pages/05_trabajos.py", title="Trabajos", icon=":material/engineering:"),
+        st.Page("src/pages/04_pagos.py", title="Pagos", icon=":material/payments:"),
+    ],
+    "Abastecimiento": [
+        st.Page("src/pages/03_materiales.py", title="Materiales", icon=":material/inventory_2:"),
+        st.Page("src/pages/07_proveedores.py", title="Proveedores", icon=":material/factory:"),
+    ],
+}
 if is_admin(user):
-    paginas.append(st.Page("src/pages/06_usuarios.py", title="Usuarios", icon=":material/manage_accounts:"))
+    paginas["Administración"] = [
+        st.Page("src/pages/06_usuarios.py", title="Usuarios", icon=":material/manage_accounts:")
+    ]
 
 pagina = st.navigation(paginas)
 pagina.run()
