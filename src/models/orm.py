@@ -37,7 +37,7 @@ class CiudadORM(Base):
 class ClienteORM(Base):
     __tablename__ = "clientes"
 
-    cuit_cliente: Mapped[str] = mapped_column(String(13), primary_key=True)
+    cuit_cliente: Mapped[str] = mapped_column("cuilt_cliente", String(13), primary_key=True)
     nombre: Mapped[str] = mapped_column(String(45), nullable=False)
     apellido: Mapped[str] = mapped_column(String(45), nullable=False)
 
@@ -58,7 +58,7 @@ class ClientesContactoORM(Base):
     fk_cliente: Mapped[str] = mapped_column(
         String(13),
         ForeignKey(
-            "clientes.cuit_cliente",
+            "clientes.cuilt_cliente",
             name="fk_clientes_contacto_cliente",
             ondelete="RESTRICT",
             onupdate="CASCADE",
@@ -279,7 +279,7 @@ class HistorialClienteORM(Base):
     fk_cliente: Mapped[str] = mapped_column(
         String(13),
         ForeignKey(
-            "clientes.cuit_cliente",
+            "clientes.cuilt_cliente",
             name="fk_historial_cliente_cliente",
             ondelete="RESTRICT",
             onupdate="CASCADE",

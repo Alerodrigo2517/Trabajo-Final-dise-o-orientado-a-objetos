@@ -18,13 +18,8 @@ def get_dashboard_summary() -> dict:
         next_month = month_start.replace(month=month_start.month + 1)
 
     with get_session() as session:
-        budget_counts = dict(
-            session.execute(
-                select(PresupuestoORM.estado, func.count(PresupuestoORM.id_presupuesto)).group_by(
-                    PresupuestoORM.estado
-                )
-            ).all()
-        )
+        # El esquema físico actual no guarda estado en presupuesto.
+        budget_count = session.scalar(select(func.count(PresupuestoORM.id_presupuesto))) or 0
         active_work = session.scalar(
             select(func.count(TrabajoORM.id_trabajo)).where(TrabajoORM.estado.in_(("PENDIENTE", "EN_PROCESO")))
         ) or 0
@@ -39,8 +34,7 @@ def get_dashboard_summary() -> dict:
         client_count = session.scalar(select(func.count(ClienteORM.cuit_cliente))) or 0
         material_count = session.scalar(select(func.count(MaterialORM.id_material))) or 0
         return {
-            "presupuestos_pendientes": int(budget_counts.get("PENDIENTE", 0)),
-            "presupuestos_borrador": int(budget_counts.get("BORRADOR", 0)),
+            "presupuestos_total": int(budget_count),
             "trabajos_activos": int(active_work),
             "trabajos_terminados": int(finished_work),
             "ingresos_mes": Decimal(monthly_income or 0),

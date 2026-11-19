@@ -33,7 +33,7 @@ def inicio():
     try:
         summary = get_dashboard_summary()
         metrics = st.columns(4)
-        metrics[0].metric("Presupuestos pendientes", summary["presupuestos_pendientes"])
+        metrics[0].metric("Presupuestos", summary["presupuestos_total"])
         metrics[1].metric("Trabajos activos", summary["trabajos_activos"])
         metrics[2].metric("Trabajos terminados", summary["trabajos_terminados"])
         metrics[3].metric("Ingresos del mes", currency(summary["ingresos_mes"]))
