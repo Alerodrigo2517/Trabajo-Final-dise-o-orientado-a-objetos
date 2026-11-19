@@ -40,7 +40,7 @@ with kpis[0]:
 with kpis[1]:
     kpi_card("Con contacto activo", with_contacts, "Vinculados a presupuestos", icon="✅", tone="emerald")
 with kpis[2]:
-    kpi_card("Domicilios / teléfonos", total_contacts, "En clientes_contacto", icon="📍", tone="blue")
+    kpi_card("Domicilios / teléfonos", total_contacts, "Contactos registrados", icon="📍", tone="blue")
 with kpis[3]:
     kpi_card("Sin contacto aún", without_contacts, "Se completan al presupuestar", icon="📋", tone="slate")
 
@@ -113,5 +113,5 @@ with tab_list:
             rows,
             "clientes",
             "Todavía no hay clientes registrados",
-            "Abrí la pestaña «Registrar nuevo cliente» para cargar el primero en la base de datos.",
+            "Abrí la pestaña «Registrar nuevo cliente» para dar de alta el primero.",
         )

@@ -205,7 +205,7 @@ def render_login() -> None:
                 submitted = st.form_submit_button("Ingresar al sistema →", type="primary", width="stretch")
 
             st.markdown(
-                '<div class="login-footer-note">🛡️ Autenticación verificada contra la base de datos MySQL (tabla <code>usuarios</code>).</div>',
+                '<div class="login-footer-note">🛡️ Acceso protegido por usuario y rol asignado.</div>',
                 unsafe_allow_html=True,
             )
 
@@ -214,12 +214,8 @@ def render_login() -> None:
 
             try:
                 user, error = AuthService().login(username, password)
-            except SQLAlchemyError as error:
-                detail = str(error).casefold()
-                if "rol" in detail and ("unknown column" in detail or "1054" in detail):
-                    st.error("Falta aplicar la migración database/migrations/20261119_add_usuario_rol.sql en MySQL.")
-                else:
-                    st.error("No se pudo validar el usuario en MySQL. Revisá la conexión configurada.")
+            except SQLAlchemyError:
+                st.error("No se pudo validar el acceso en este momento. Verificá la conexión del sistema.")
                 return
             except (ValueError, TypeError):
                 st.error("No se pudo validar el usuario. Revisá la configuración de autenticación.")

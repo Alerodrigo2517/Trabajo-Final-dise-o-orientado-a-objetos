@@ -109,7 +109,7 @@ if tab_new is not None:
                             method=method,
                             reference=reference,
                         )
-                        st.success(f"✅ Pago #{payment_id} registrado exitosamente en la base de datos.")
+                        st.success(f"✅ Pago #{payment_id} registrado exitosamente.")
                         st.rerun()
                     except (ValueError, SQLAlchemyError) as error:
                         database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))

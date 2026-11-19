@@ -753,8 +753,7 @@ def database_error() -> None:
         return
     st.session_state["_database_error_shown"] = True
     st.error(
-        "No se pudo consultar la base de datos. Verificá que MySQL esté encendido, que exista "
-        "el esquema presupuesto_herreria_poo y que las variables de conexión de .env sean correctas."
+        "No se pudo conectar con el servidor de datos. Verificá que el servicio esté activo e intentá nuevamente."
     )
 
 
@@ -842,7 +841,7 @@ def client_entry_rows(*, key_prefix: str = "client") -> None:
             cuit = st.text_input("CUIT / CUIL (11 dígitos)", placeholder="Ej. 20-12345678-9", max_chars=13)
 
         st.markdown('<p class="panel-heading" style="margin-top:0.65rem;">DOMICILIO Y TELÉFONO DE CONTACTO (OPCIONAL)</p>', unsafe_allow_html=True)
-        st.caption("Si completás estos campos, el contacto quedará registrado en `clientes_contacto` listo para asociar a presupuestos.")
+        st.caption("Si completás estos campos, el domicilio y teléfono quedarán asociados al cliente para sus presupuestos.")
         col_addr, col_city, col_phone = st.columns([1.2, 1, 1])
         with col_addr:
             address = st.text_input("Dirección del cliente", placeholder="Calle y número", max_chars=100)
@@ -863,6 +862,6 @@ def client_entry_rows(*, key_prefix: str = "client") -> None:
                 ciudad=city,
                 telefono=phone,
             )
-            st.success(f"✅ Cliente {saved['nombre_completo']} ({saved['cuit_display']}) guardado en la base de datos.")
+            st.success(f"✅ Cliente {saved['nombre_completo']} ({saved['cuit_display']}) registrado correctamente.")
         except (ValueError, SQLAlchemyError) as error:
             handle_database_error(error)

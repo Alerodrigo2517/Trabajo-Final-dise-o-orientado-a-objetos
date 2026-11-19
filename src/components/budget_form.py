@@ -106,7 +106,7 @@ def render_budget_form(*, key_prefix: str = "presupuesto", compact: bool = False
             st.text_input("CUIT / CUIL", value=client["cuit_display"], disabled=True, key=f"{entry_key}_client_cuit")
 
         if selected_contact is None:
-            st.caption("Completá el domicilio y teléfono del cliente (se registrará en `clientes_contacto`).")
+            st.caption("Completá el domicilio, localidad y teléfono de contacto del cliente.")
             contact_col1, contact_col2, contact_col3 = st.columns([1.2, 1, 1])
             with contact_col1:
                 contact_address = st.text_input("Dirección del cliente", placeholder="Calle y número", key=f"{entry_key}_contact_address")
@@ -229,7 +229,7 @@ def render_budget_form(*, key_prefix: str = "presupuesto", compact: bool = False
             materials=selected_items,
         )
         saved_budget = next(row for row in list_budgets() if row["id_presupuesto"] == budget_id)
-        st.success(f"✅ Presupuesto #{budget_id} registrado exitosamente en la base de datos.")
+        st.success(f"✅ Presupuesto #{budget_id} registrado exitosamente.")
         st.metric("Total estimado · materiales + mano de obra", currency(saved_budget["total_estimado"]))
     except (ValueError, SQLAlchemyError) as error:
         handle_database_error(error)
