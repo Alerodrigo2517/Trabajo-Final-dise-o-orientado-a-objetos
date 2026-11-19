@@ -23,15 +23,27 @@ def render_login() -> None:
           padding-top: 3.2rem !important;
         }
         .login-showcase {
-          padding: 2.35rem 2.25rem;
+          display: grid;
+          place-items: center;
+          min-height: 620px;
+          padding: 2rem;
           border-radius: 20px;
-          background: linear-gradient(145deg, #0f172a 0%, #1e293b 65%, #27272a 100%);
+          background: radial-gradient(circle at 50% 48%, rgba(217, 119, 6, 0.15) 0%, transparent 48%),
+                      linear-gradient(145deg, #0f172a 0%, #1e293b 65%, #27272a 100%);
           color: #f8fafc;
           border: 1px solid rgba(255, 255, 255, 0.1);
           box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.35);
-          height: 100%;
           position: relative;
           overflow: hidden;
+        }
+        .login-hero-logo {
+          position: relative;
+          z-index: 1;
+          display: block;
+          width: min(100%, 500px);
+          max-height: 560px;
+          object-fit: contain;
+          filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.48));
         }
         .login-showcase::after {
           content: "";
@@ -44,59 +56,14 @@ def render_login() -> None:
           background: radial-gradient(circle, rgba(217, 119, 6, 0.28) 0%, transparent 70%);
           pointer-events: none;
         }
-        .login-brand-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.35rem 0.85rem;
-          border-radius: 999px;
-          background: rgba(217, 119, 6, 0.18);
-          border: 1px solid rgba(251, 191, 36, 0.35);
-          color: #fbbf24;
-          font-size: 0.72rem;
-          font-weight: 700;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          margin-bottom: 1.25rem;
+        @media (max-width: 900px) {
+          .main .block-container { padding-top: 1.5rem !important; }
+          .login-showcase { min-height: 440px; }
+          .login-hero-logo { width: min(100%, 390px); max-height: 390px; }
         }
-        .login-showcase h1 {
-          color: #ffffff !important;
-          font-size: clamp(1.85rem, 2.6vw, 2.35rem);
-          font-weight: 800;
-          line-height: 1.15;
-          margin: 0 0 0.75rem;
-          letter-spacing: -0.03em;
-        }
-        .login-showcase p.lead {
-          color: #cbd5e1;
-          font-size: 0.96rem;
-          line-height: 1.6;
-          margin: 0 0 1.65rem;
-        }
-        .login-feature-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.85rem;
-          margin-top: 1.25rem;
-        }
-        .login-feature-item {
-          padding: 0.9rem 1rem;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .login-feature-item strong {
-          display: block;
-          color: #f8fafc;
-          font-size: 0.84rem;
-          font-weight: 700;
-          margin-bottom: 0.2rem;
-        }
-        .login-feature-item span {
-          color: #94a3b8;
-          font-size: 0.76rem;
-          line-height: 1.4;
-          display: block;
+        @media (max-width: 600px) {
+          .login-showcase { min-height: 320px; padding: 1.25rem; }
+          .login-hero-logo { width: min(100%, 300px); max-height: 300px; }
         }
         .login-card-header {
           margin-bottom: 1.1rem;
@@ -144,18 +111,9 @@ def render_login() -> None:
 
     logo_uri = get_logo_data_uri()
     logo_hero_html = (
-        f'<img src="{logo_uri}" alt="Herrería Don Francisco" '
-        'style="width:118px;height:118px;object-fit:contain;border-radius:18px;'
-        'border:2px solid rgba(251,191,36,0.45);box-shadow:0 10px 25px rgba(0,0,0,0.45);margin-bottom:1.1rem;" />'
+        f'<img class="login-hero-logo" src="{logo_uri}" alt="Emblema de Herrería Don Francisco" />'
         if logo_uri
-        else '<div class="login-brand-pill">🔨 HERRERÍA DON FRANCISCO</div>'
-    )
-    logo_badge_html = (
-        f'<img src="{logo_uri}" alt="Herrería Don Francisco" '
-        'style="width:54px;height:54px;object-fit:contain;border-radius:12px;'
-        'border:1px solid #fde68a;box-shadow:0 4px 12px rgba(15,23,42,0.12);margin-bottom:0.85rem;" />'
-        if logo_uri
-        else '<div class="login-lock-badge">🔐</div>'
+        else '<div class="login-lock-badge">🔨</div>'
     )
 
     left_col, right_col = st.columns([1.25, 1], gap="large")
@@ -165,29 +123,6 @@ def render_login() -> None:
             f"""
             <div class="login-showcase">
               {logo_hero_html}
-              <h1>Herrería Don Francisco</h1>
-              <p class="lead">
-                Control integral del taller en tiempo real: desde la primera cotización y cálculo de materiales
-                hasta la orden de producción y seguimiento de cobros.
-              </p>
-              <div class="login-feature-grid">
-                <div class="login-feature-item">
-                  <strong>📐 Presupuestos precisos</strong>
-                  <span>Cálculo automático de materiales y mano de obra por hora o porcentaje.</span>
-                </div>
-                <div class="login-feature-item">
-                  <strong>⚙️ Órdenes de trabajo</strong>
-                  <span>Seguimiento de fabricación, estados de obra y fechas de entrega.</span>
-                </div>
-                <div class="login-feature-item">
-                  <strong>💳 Caja y cobranzas</strong>
-                  <span>Registro de pagos parciales o totales y control de saldos pendientes.</span>
-                </div>
-                <div class="login-feature-item">
-                  <strong>🔐 Control por roles</strong>
-                  <span>Permisos diferenciados para Administradores, Operadores y Auditores.</span>
-                </div>
-              </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -198,7 +133,7 @@ def render_login() -> None:
             st.markdown(
                 f"""
                 <div class="login-card-header">
-                  {logo_badge_html}
+                  <div class="login-lock-badge">🔐</div>
                   <h2>Iniciar sesión</h2>
                   <p>Ingresá con tu cuenta asignada para acceder al panel.</p>
                 </div>
