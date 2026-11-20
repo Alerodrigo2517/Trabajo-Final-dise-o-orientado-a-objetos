@@ -1,22 +1,22 @@
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.core.authorization import can_write
-from src.core.session import current_user
-from src.services.client_service import create_client, list_clients
+from src.core.authorization import puede_escribir
+from src.core.session import obtener_usuario_actual
+from src.services.client_service import crear_cliente, listar_clientes
 from src.ui import (
-    client_entry_rows,
-    database_error,
-    kpi_card,
-    page_header,
-    records_table,
-    section_header,
+    mostrar_alta_cliente,
+    mostrar_error_bd,
+    tarjeta_indicador,
+    encabezado_pagina,
+    mostrar_tabla_registros,
+    encabezado_seccion,
 )
 
-usuario = current_user()
-puede_editar = can_write(usuario)
+usuario = obtener_usuario_actual()
+puede_editar = puede_escribir(usuario)
 
-page_header(
+encabezado_pagina(
     "PADRÓN COMERCIAL",
     "Clientes",
     "Registrá clientes por CUIT/CUIL, consultá sus domicilios de contacto y mantené actualizado el directorio comercial.",
@@ -25,9 +25,9 @@ page_header(
 
 clientes = []
 try:
-    clientes = list_clients()
+    clientes = listar_clientes()
 except SQLAlchemyError:
-    database_error()
+    mostrar_error_bd()
 
 total_clientes = len(clientes)
 con_contactos = sum(1 for c in clientes if len(c.get("contactos", [])) > 0)
@@ -36,13 +36,13 @@ total_contactos = sum(len(c.get("contactos", [])) for c in clientes)
 
 indicadores = st.columns(4)
 with indicadores[0]:
-    kpi_card("Total clientes", total_clientes, "Registrados en el padrón", icono="👥", tono="amber")
+    tarjeta_indicador("Total clientes", total_clientes, "Registrados en el padrón", icono="👥", tono="amber")
 with indicadores[1]:
-    kpi_card("Con contacto activo", con_contactos, "Vinculados a presupuestos", icono="✅", tono="emerald")
+    tarjeta_indicador("Con contacto activo", con_contactos, "Vinculados a presupuestos", icono="✅", tono="emerald")
 with indicadores[2]:
-    kpi_card("Domicilios / teléfonos", total_contactos, "Contactos registrados", icono="📍", tono="blue")
+    tarjeta_indicador("Domicilios / teléfonos", total_contactos, "Contactos registrados", icono="📍", tono="blue")
 with indicadores[3]:
-    kpi_card("Sin contacto aún", sin_contactos, "Se completan al presupuestar", icono="📋", tono="slate")
+    tarjeta_indicador("Sin contacto aún", sin_contactos, "Se completan al presupuestar", icono="📋", tono="slate")
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
@@ -56,12 +56,12 @@ else:
 if pestana_nuevo is not None:
     with pestana_nuevo:
         with st.container(border=True):
-            client_entry_rows(prefijo_clave="pagina_clientes")
+            mostrar_alta_cliente(prefijo_clave="pagina_clientes")
 
 with pestana_lista:
     if clientes:
         with st.container(border=True):
-            section_header(
+            encabezado_seccion(
                 "Ficha rápida de contacto por cliente",
                 "Seleccioná un cliente para revisar sus domicilios, localidades y teléfonos registrados.",
                 icono="📍",
@@ -94,7 +94,7 @@ with pestana_lista:
                     st.info("Este cliente todavía no tiene domicilios registrados. Se agregan automáticamente al crearle su primer presupuesto.")
 
     with st.container(border=True):
-        section_header(
+        encabezado_seccion(
             "Padrón general de clientes",
             "Listado completo de clientes identificados por CUIT y cantidad de contactos asociados.",
             icono="📒",
@@ -109,7 +109,7 @@ with pestana_lista:
             }
             for cliente in clientes
         ]
-        records_table(
+        mostrar_tabla_registros(
             filas,
             "clientes",
             "Todavía no hay clientes registrados",

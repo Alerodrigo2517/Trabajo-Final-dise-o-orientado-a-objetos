@@ -4,12 +4,12 @@ import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.core.config import configuracion
-from src.core.session import start_user_session as iniciar_sesion_usuario
+from src.core.session import iniciar_sesion_usuario
 from src.services.auth_service import AuthService
-from src.ui import get_logo_data_uri
+from src.ui import obtener_logo_uri
 
 
-def render_login() -> None:
+def mostrar_inicio_sesion() -> None:
     """Muestra la portada de acceso a pantalla completa y valida contra MySQL."""
     st.markdown(
         """
@@ -134,7 +134,7 @@ def render_login() -> None:
     if st.session_state.pop("_session_expired", False):
         st.warning("⏱️ Tu sesión venció por inactividad. Volvé a ingresar tus credenciales.")
 
-    uri_logo = get_logo_data_uri()
+    uri_logo = obtener_logo_uri()
     logo_hero_html = (
         f'<img class="login-hero-logo" src="{uri_logo}" alt="Emblema de Herrería Don Francisco" />'
         if uri_logo
@@ -190,7 +190,7 @@ def render_login() -> None:
                 return
 
             try:
-                usuario, error = AuthService().login(nombre_usuario, contrasena)
+                usuario, error = AuthService().autenticar_usuario(nombre_usuario, contrasena)
             except SQLAlchemyError:
                 st.error("No se pudo validar el acceso en este momento. Verificá la conexión del sistema.")
                 return

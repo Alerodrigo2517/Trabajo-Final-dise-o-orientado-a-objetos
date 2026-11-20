@@ -1,23 +1,23 @@
 import streamlit as st
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from src.core.authorization import CODIGOS_ROL, ETIQUETAS_ROL, is_admin
-from src.core.session import current_user
+from src.core.authorization import CODIGOS_ROL, ETIQUETAS_ROL, es_administrador
+from src.core.session import obtener_usuario_actual
 from src.services.auth_service import AuthService
 from src.ui import (
-    database_error,
-    kpi_card,
-    page_header,
-    records_table,
-    section_header,
+    mostrar_error_bd,
+    tarjeta_indicador,
+    encabezado_pagina,
+    mostrar_tabla_registros,
+    encabezado_seccion,
 )
 
-usuario = current_user()
-if not is_admin(usuario):
+usuario = obtener_usuario_actual()
+if not es_administrador(usuario):
     st.error("🔒 Esta sección está disponible únicamente para perfiles con rol Administrador.")
     st.stop()
 
-page_header(
+encabezado_pagina(
     "SEGURIDAD Y ACCESOS",
     "Usuarios del Sistema",
     "Administrá las cuentas de acceso del personal y asigná permisos operativos por rol (Administrador, Operador o Auditor).",
@@ -27,9 +27,9 @@ page_header(
 servicio = AuthService()
 cuentas = []
 try:
-    cuentas = servicio.list_users()
+    cuentas = servicio.listar_usuarios()
 except SQLAlchemyError:
-    database_error()
+    mostrar_error_bd()
 
 cantidad_administradores = sum(1 for a in cuentas if a["rol"] == "ADMIN")
 cantidad_operadores = sum(1 for a in cuentas if a["rol"] == "OPERADOR")
@@ -37,13 +37,13 @@ cantidad_auditores = sum(1 for a in cuentas if a["rol"] == "AUDITOR")
 
 indicadores = st.columns(4)
 with indicadores[0]:
-    kpi_card("Cuentas totales", len(cuentas), "Usuarios activos en el sistema", icono="👥", tono="amber")
+    tarjeta_indicador("Cuentas totales", len(cuentas), "Usuarios activos en el sistema", icono="👥", tono="amber")
 with indicadores[1]:
-    kpi_card("Administradores", cantidad_administradores, "Control total del sistema", icono="🛡️", tono="emerald")
+    tarjeta_indicador("Administradores", cantidad_administradores, "Control total del sistema", icono="🛡️", tono="emerald")
 with indicadores[2]:
-    kpi_card("Operadores", cantidad_operadores, "Gestión comercial y taller", icono="⚙️", tono="blue")
+    tarjeta_indicador("Operadores", cantidad_operadores, "Gestión comercial y taller", icono="⚙️", tono="blue")
 with indicadores[3]:
-    kpi_card("Auditores", cantidad_auditores, "Acceso de solo lectura", icono="👁️", tono="slate")
+    tarjeta_indicador("Auditores", cantidad_auditores, "Acceso de solo lectura", icono="👁️", tono="slate")
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
@@ -56,7 +56,7 @@ pestana_lista, pestana_nuevo = st.tabs(
 
 with pestana_nuevo:
     with st.container(border=True):
-        section_header(
+        encabezado_seccion(
             "Registrar nueva cuenta de usuario",
             "Creá un perfil de acceso y asignale su nivel de permisos operativos en el sistema.",
             icono="👤",
@@ -99,7 +99,7 @@ with pestana_nuevo:
                 st.error("Las contraseñas ingresadas no coinciden.")
             else:
                 try:
-                    servicio.create_account(nombre, nombre_usuario, contrasena, rol)
+                    servicio.crear_cuenta(nombre, nombre_usuario, contrasena, rol)
                     st.success(f"✅ Cuenta para «{nombre_usuario.strip()}» creada con perfil {ETIQUETAS_ROL[rol]}.")
                     st.rerun()
                 except ValueError as error:
@@ -107,12 +107,12 @@ with pestana_nuevo:
                 except IntegrityError:
                     st.error("Ese nombre de usuario ya está registrado.")
                 except SQLAlchemyError:
-                    database_error()
+                    mostrar_error_bd()
 
 with pestana_lista:
     if cuentas:
         with st.container(border=True):
-            section_header(
+            encabezado_seccion(
                 "Actualizar rol de una cuenta",
                 "Seleccioná un usuario existente para modificar sus permisos operativos dentro del sistema.",
                 icono="🔄",
@@ -145,7 +145,7 @@ with pestana_lista:
                     update = st.form_submit_button("Guardar nuevo rol", type="primary", width="stretch")
                 if update:
                     try:
-                        servicio.update_role(
+                        servicio.actualizar_rol(
                             usuario_seleccionado["id_usuario"],
                             rol_nuevo,
                             actor_user_id=usuario["id_usuario"],
@@ -155,10 +155,10 @@ with pestana_lista:
                     except ValueError as error:
                         st.error(str(error))
                     except SQLAlchemyError:
-                        database_error()
+                        mostrar_error_bd()
 
         with st.container(border=True):
-            section_header(
+            encabezado_seccion(
                 "Directorio de cuentas registradas",
                 "Listado completo de usuarios habilitados con su identificador, nombre de acceso y perfil asignado.",
                 icono="🔐",
@@ -173,7 +173,7 @@ with pestana_lista:
                 }
                 for fila in cuentas
             ]
-            records_table(
+            mostrar_tabla_registros(
                 filas_usuarios,
                 "usuarios_db",
                 "Todavía no hay cuentas registradas",

@@ -13,7 +13,7 @@ if not nombre or not usuario or not contrasena:
     raise SystemExit("Completa el nombre, el usuario y la contraseña.")
 
 try:
-    creado = AuthService().create_account(nombre, usuario, contrasena)
+    creado = AuthService().crear_cuenta(nombre, usuario, contrasena)
 except ValueError as error:
     raise SystemExit(str(error)) from error
 

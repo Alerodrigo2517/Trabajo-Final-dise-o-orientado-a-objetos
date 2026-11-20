@@ -3,21 +3,21 @@ from datetime import date
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.core.authorization import can_write
-from src.core.session import current_user
-from src.services.budget_service import list_budgets
-from src.services.work_service import ESTADOS_TRABAJO, create_work, list_works, update_work
+from src.core.authorization import puede_escribir
+from src.core.session import obtener_usuario_actual
+from src.services.budget_service import listar_presupuestos
+from src.services.work_service import ESTADOS_TRABAJO, crear_trabajo, listar_trabajos, actualizar_trabajo
 from src.ui import (
-    currency,
-    database_error,
-    kpi_card,
-    page_header,
-    records_table,
-    section_header,
+    formatear_moneda,
+    mostrar_error_bd,
+    tarjeta_indicador,
+    encabezado_pagina,
+    mostrar_tabla_registros,
+    encabezado_seccion,
 )
 
-puede_editar = can_write(current_user())
-page_header(
+puede_editar = puede_escribir(obtener_usuario_actual())
+encabezado_pagina(
     "TALLER Y PRODUCCIÓN",
     "Órdenes de Trabajo",
     "Iniciá órdenes de fabricación a partir de presupuestos aprobados y gestioná el avance de obra hasta su finalización.",
@@ -27,10 +27,10 @@ page_header(
 presupuestos = []
 trabajos = []
 try:
-    presupuestos = list_budgets()
-    trabajos = list_works()
+    presupuestos = listar_presupuestos()
+    trabajos = listar_trabajos()
 except SQLAlchemyError:
-    database_error()
+    mostrar_error_bd()
 
 elegible = [presupuesto for presupuesto in presupuestos if presupuesto["estado"] == "APROBADO" and presupuesto["trabajo_id"] is None]
 trabajos_activos = sum(1 for w in trabajos if w["estado"] in ("PENDIENTE", "EN_PROCESO"))
@@ -38,13 +38,13 @@ trabajos_terminados = sum(1 for w in trabajos if w["estado"] in ("FINALIZADO", "
 
 indicadores = st.columns(4)
 with indicadores[0]:
-    kpi_card("Total órdenes", len(trabajos), "Registradas en el taller", icono="🛠️", tono="amber")
+    tarjeta_indicador("Total órdenes", len(trabajos), "Registradas en el taller", icono="🛠️", tono="amber")
 with indicadores[1]:
-    kpi_card("Finalizadas", trabajos_terminados, "Trabajos concluidos", icono="✅", tono="emerald")
+    tarjeta_indicador("Finalizadas", trabajos_terminados, "Trabajos concluidos", icono="✅", tono="emerald")
 with indicadores[2]:
-    kpi_card("En fabricación", trabajos_activos, "Pendientes o en proceso", icono="⚙️", tono="blue")
+    tarjeta_indicador("En fabricación", trabajos_activos, "Pendientes o en proceso", icono="⚙️", tono="blue")
 with indicadores[3]:
-    kpi_card("Listos para iniciar", len(elegible), "Presupuestos aprobados sin orden", icono="🚀", tono="slate")
+    tarjeta_indicador("Listos para iniciar", len(elegible), "Presupuestos aprobados sin orden", icono="🚀", tono="slate")
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
@@ -63,7 +63,7 @@ else:
 if pestana_nuevo is not None:
     with pestana_nuevo:
         with st.container(border=True):
-            section_header(
+            encabezado_seccion(
                 "Apertura de orden de trabajo",
                 "Seleccioná un presupuesto aprobado para generar su orden de fabricación en el taller.",
                 icono="🚀",
@@ -71,7 +71,7 @@ if pestana_nuevo is not None:
             )
             if elegible:
                 opciones_presupuestos = {
-                    f"#{presupuesto['id_presupuesto']} · {presupuesto['cliente']} · {presupuesto['tipo_trabajo']} ({currency(presupuesto['total_estimado'])})": presupuesto
+                    f"#{presupuesto['id_presupuesto']} · {presupuesto['cliente']} · {presupuesto['tipo_trabajo']} ({formatear_moneda(presupuesto['total_estimado'])})": presupuesto
                     for presupuesto in elegible
                 }
                 etiqueta_presupuesto_seleccionado = st.selectbox(
@@ -95,7 +95,7 @@ if pestana_nuevo is not None:
                         )
                         st.text_input(
                             "Total presupuestado",
-                            value=currency(presupuesto_objetivo["total_estimado"]),
+                            value=formatear_moneda(presupuesto_objetivo["total_estimado"]),
                             disabled=True,
                         )
 
@@ -110,7 +110,7 @@ if pestana_nuevo is not None:
                     create = st.form_submit_button("🛠️ Crear orden de trabajo", type="primary", width="stretch")
                 if create:
                     try:
-                        id_trabajo = create_work(
+                        id_trabajo = crear_trabajo(
                             id_presupuesto=presupuesto_objetivo["id_presupuesto"],
                             fecha_inicio=fecha_inicio,
                             observaciones=observaciones,
@@ -118,7 +118,7 @@ if pestana_nuevo is not None:
                         st.success(f"✅ Orden de trabajo #{id_trabajo} creada exitosamente.")
                         st.rerun()
                     except (ValueError, SQLAlchemyError) as error:
-                        database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))
+                        mostrar_error_bd() if isinstance(error, SQLAlchemyError) else st.error(str(error))
             else:
                 st.info("No hay presupuestos aprobados pendientes de iniciar orden. Aprobá primero una cotización en la sección Presupuestos.")
                 st.page_link("src/pages/02_presupuestos.py", label="Ir a Presupuestos", icon="📐")
@@ -126,7 +126,7 @@ if pestana_nuevo is not None:
 with pestana_lista:
     if puede_editar and trabajos:
         with st.container(border=True):
-            section_header(
+            encabezado_seccion(
                 "Actualizar estado y seguimiento de orden",
                 "Modificá la etapa de producción, fechas de ejecución y notas técnicas de una orden activa.",
                 icono="🔄",
@@ -183,7 +183,7 @@ with pestana_lista:
                     update = st.form_submit_button("Guardar cambios de la orden", type="primary", width="stretch")
                 if update:
                     try:
-                        update_work(
+                        actualizar_trabajo(
                             id_trabajo=trabajo_seleccionado["id_trabajo"],
                             estado=estado,
                             fecha_inicio=fecha_inicio,
@@ -193,10 +193,10 @@ with pestana_lista:
                         st.success("✅ Orden de trabajo actualizada correctamente.")
                         st.rerun()
                     except (ValueError, SQLAlchemyError) as error:
-                        database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))
+                        mostrar_error_bd() if isinstance(error, SQLAlchemyError) else st.error(str(error))
 
     with st.container(border=True):
-        section_header(
+        encabezado_seccion(
             "Registro histórico de órdenes de trabajo",
             "Listado completo de trabajos con sus fechas de inicio, finalización y estado actual.",
             icono="📊",
@@ -215,7 +215,7 @@ with pestana_lista:
             }
             for trabajo in trabajos
         ]
-        records_table(
+        mostrar_tabla_registros(
             filas_trabajos,
             "works",
             "Todavía no hay órdenes de trabajo registradas",

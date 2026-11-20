@@ -9,7 +9,7 @@ DIRECTORIO_BASE = Path(__file__).resolve().parents[2]
 load_dotenv(DIRECTORIO_BASE / ".env")
 
 
-def database_url_from_environment() -> str | URL:
+def crear_url_bd_desde_entorno() -> str | URL:
     url_configurada = os.getenv("DATABASE_URL", "").strip()
     if url_configurada:
         return url_configurada
@@ -39,7 +39,7 @@ class Settings:
     clave_fernet: str = campo(default_factory=lambda: os.getenv("FERNET_KEY", ""))
     rondas_bcrypt: int = campo(default_factory=lambda: int(os.getenv("BCRYPT_ROUNDS", "12")))
     minutos_expiracion_sesion: int = campo(default_factory=lambda: int(os.getenv("SESSION_TIMEOUT_MINUTES", "60")))
-    url_base_datos: str | URL = campo(default_factory=database_url_from_environment)
+    url_base_datos: str | URL = campo(default_factory=crear_url_bd_desde_entorno)
 
 
 configuracion = Settings()

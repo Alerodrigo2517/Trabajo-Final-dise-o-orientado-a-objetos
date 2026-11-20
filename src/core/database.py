@@ -26,7 +26,7 @@ FabricaSesiones = sessionmaker(
 
 
 @contextmanager
-def get_session():
+def obtener_sesion_bd():
     sesion = FabricaSesiones()
     try:
         yield sesion
@@ -38,6 +38,6 @@ def get_session():
         sesion.close()
 
 
-def test_connection() -> bool:
+def probar_conexion_bd() -> bool:
     with motor.connect() as conexion:
         return conexion.scalar(select(1)) == 1

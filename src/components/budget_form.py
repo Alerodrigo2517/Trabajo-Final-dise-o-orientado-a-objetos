@@ -6,25 +6,25 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.core.authorization import can_write
-from src.core.session import current_user
-from src.services.budget_service import create_budget, list_budgets, materials_for_budget
-from src.services.client_service import list_client_contacts, list_clients
-from src.ui import currency, handle_database_error, section_header
+from src.core.authorization import puede_escribir
+from src.core.session import obtener_usuario_actual
+from src.services.budget_service import crear_presupuesto, listar_presupuestos, obtener_materiales_para_presupuesto
+from src.services.client_service import obtener_contactos_cliente, listar_clientes
+from src.ui import formatear_moneda, gestionar_error_bd, encabezado_seccion
 
 
-def render_budget_form(*, prefijo_clave: str = "presupuesto", compacto: bool = False) -> None:
-    if not can_write(current_user()):
+def mostrar_formulario_presupuesto(*, prefijo_clave: str = "presupuesto", compacto: bool = False) -> None:
+    if not puede_escribir(obtener_usuario_actual()):
         st.info("Tu perfil puede consultar presupuestos, pero no crear ni modificar datos.")
         return
     try:
-        clientes = list_clients()
-        materiales = materials_for_budget()
+        clientes = listar_clientes()
+        materiales = obtener_materiales_para_presupuesto()
     except SQLAlchemyError as error:
-        handle_database_error(error)
+        gestionar_error_bd(error)
         return
 
-    section_header(
+    encabezado_seccion(
         "Confección de Presupuesto",
         "Seleccioná el cliente, definí la ubicación de obra y cargá los materiales a cotizar.",
         icono="📐",
@@ -56,9 +56,9 @@ def render_budget_form(*, prefijo_clave: str = "presupuesto", compacto: bool = F
     clave_fila = f"{prefijo_clave}_{cliente['cuit_cliente']}"
 
     try:
-        contactos = list_client_contacts(cliente["cuit_cliente"])
+        contactos = obtener_contactos_cliente(cliente["cuit_cliente"])
     except (ValueError, SQLAlchemyError) as error:
-        handle_database_error(error)
+        gestionar_error_bd(error)
         return
 
     etiquetas_contacto = {"➕ Registrar nuevo contacto": None}
@@ -93,7 +93,7 @@ def render_budget_form(*, prefijo_clave: str = "presupuesto", compacto: bool = F
         )
 
     etiquetas_materiales = {
-        f"#{material['id_material']} · {material['descripcion']} · {currency(material['precio_unitario'])}": material
+        f"#{material['id_material']} · {material['descripcion']} · {formatear_moneda(material['precio_unitario'])}": material
         for material in materiales
     }
 
@@ -210,7 +210,7 @@ def render_budget_form(*, prefijo_clave: str = "presupuesto", compacto: bool = F
         )
 
     try:
-        id_presupuesto = create_budget(
+        id_presupuesto = crear_presupuesto(
             cuit_cliente=cliente["cuit_cliente"],
             id_contacto_cliente=contacto_seleccionado["id_contacto"] if contacto_seleccionado else None,
             direccion_contacto=direccion_contacto,
@@ -228,8 +228,8 @@ def render_budget_form(*, prefijo_clave: str = "presupuesto", compacto: bool = F
             horas=horas,
             materiales=elementos_seleccionados,
         )
-        presupuesto_guardado = next(fila for fila in list_budgets() if fila["id_presupuesto"] == id_presupuesto)
+        presupuesto_guardado = next(fila for fila in listar_presupuestos() if fila["id_presupuesto"] == id_presupuesto)
         st.success(f"✅ Presupuesto #{id_presupuesto} registrado exitosamente.")
-        st.metric("Total estimado · materiales + mano de obra", currency(presupuesto_guardado["total_estimado"]))
+        st.metric("Total estimado · materiales + mano de obra", formatear_moneda(presupuesto_guardado["total_estimado"]))
     except (ValueError, SQLAlchemyError) as error:
-        handle_database_error(error)
+        gestionar_error_bd(error)

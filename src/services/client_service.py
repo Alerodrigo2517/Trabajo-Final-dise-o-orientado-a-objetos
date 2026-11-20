@@ -5,19 +5,19 @@ import re
 
 from sqlalchemy.exc import IntegrityError
 
-from src.core.database import get_session
-from src.core.validators import clean_text, display_cuit, normalize_cuit
+from src.core.database import obtener_sesion_bd
+from src.core.validators import limpiar_texto, mostrar_cuit, normalizar_cuit
 from src.repositories.budget_repository import BudgetRepository
 from src.repositories.client_repository import ClientRepository
 
 
-def list_clients() -> list[dict]:
-    with get_session() as sesion:
-        clientes = ClientRepository.list_clients(sesion)
+def listar_clientes() -> list[dict]:
+    with obtener_sesion_bd() as sesion:
+        clientes = ClientRepository.listar_clientes(sesion)
         return [
             {
                 "cuit_cliente": cliente.cuit_cliente,
-                "cuit_display": display_cuit(cliente.cuit_cliente),
+                "cuit_display": mostrar_cuit(cliente.cuit_cliente),
                 "nombre": cliente.nombre,
                 "apellido": cliente.apellido,
                 "nombre_completo": f"{cliente.nombre} {cliente.apellido}",
@@ -37,7 +37,7 @@ def list_clients() -> list[dict]:
         ]
 
 
-def create_client(
+def crear_cliente(
     cuit: str,
     nombre: str,
     apellido: str,
@@ -45,33 +45,33 @@ def create_client(
     ciudad: str = "",
     telefono: str = "",
 ) -> dict:
-    cuit_normalizado = normalize_cuit(cuit)
-    nombre_limpio = clean_text(nombre, "el nombre", 45)
-    apellido_limpio = clean_text(apellido, "el apellido", 45)
+    cuit_normalizado = normalizar_cuit(cuit)
+    nombre_limpio = limpiar_texto(nombre, "el nombre", 45)
+    apellido_limpio = limpiar_texto(apellido, "el apellido", 45)
 
     tiene_datos_contacto = any((direccion or "").strip() or (ciudad or "").strip() or (telefono or "").strip() for _ in [0])
     direccion_limpia = ""
     ciudad_limpia = ""
     telefono_limpio = ""
     if tiene_datos_contacto:
-        direccion_limpia = clean_text(direccion, "la dirección del cliente", 100)
-        ciudad_limpia = clean_text(ciudad, "la ciudad del cliente", 100)
-        telefono_limpio = clean_text(telefono, "el teléfono del cliente", 20)
+        direccion_limpia = limpiar_texto(direccion, "la dirección del cliente", 100)
+        ciudad_limpia = limpiar_texto(ciudad, "la ciudad del cliente", 100)
+        telefono_limpio = limpiar_texto(telefono, "el teléfono del cliente", 20)
 
     try:
-        with get_session() as sesion:
-            existentes = ClientRepository.list_clients(sesion)
+        with obtener_sesion_bd() as sesion:
+            existentes = ClientRepository.listar_clientes(sesion)
             if any(re.sub(r"\D", "", cliente.cuit_cliente) == cuit_normalizado for cliente in existentes):
                 raise ValueError("Ya existe un cliente con ese CUIT.")
-            cliente = ClientRepository.create_client(
+            cliente = ClientRepository.crear_cliente(
                 sesion,
                 cuit=cuit_normalizado,
                 nombre=nombre_limpio,
                 apellido=apellido_limpio,
             )
             if tiene_datos_contacto:
-                ciudad_orm = BudgetRepository.get_or_create_city(sesion, ciudad_limpia)
-                BudgetRepository.create_client_contact(
+                ciudad_orm = BudgetRepository.obtener_o_crear_ciudad(sesion, ciudad_limpia)
+                BudgetRepository.crear_contacto_cliente(
                     sesion,
                     cuit_cliente=cliente.cuit_cliente,
                     direccion=direccion_limpia,
@@ -81,7 +81,7 @@ def create_client(
                 )
             return {
                 "cuit_cliente": cliente.cuit_cliente,
-                "cuit_display": display_cuit(cliente.cuit_cliente),
+                "cuit_display": mostrar_cuit(cliente.cuit_cliente),
                 "nombre": cliente.nombre,
                 "apellido": cliente.apellido,
                 "nombre_completo": f"{cliente.nombre} {cliente.apellido}",
@@ -90,19 +90,19 @@ def create_client(
         raise ValueError("Ya existe un cliente con ese CUIT.") from exc
 
 
-def list_client_contacts(cuit: str) -> list[dict]:
+def obtener_contactos_cliente(cuit: str) -> list[dict]:
     cuit_legacy = (cuit or "").strip()
     try:
-        cuit_normalizado = normalize_cuit(cuit)
+        cuit_normalizado = normalizar_cuit(cuit)
     except ValueError:
         cuit_normalizado = cuit_legacy
-    with get_session() as sesion:
-        cliente = ClientRepository.get_by_cuit(sesion, cuit_legacy)
+    with obtener_sesion_bd() as sesion:
+        cliente = ClientRepository.obtener_por_cuit(sesion, cuit_legacy)
         if cliente is None and cuit_normalizado != cuit_legacy:
-            cliente = ClientRepository.get_by_cuit(sesion, cuit_normalizado)
+            cliente = ClientRepository.obtener_por_cuit(sesion, cuit_normalizado)
         if cliente is None:
             return []
-        contactos = ClientRepository.contacts_for_client(sesion, cliente.cuit_cliente)
+        contactos = ClientRepository.obtener_contactos_cliente(sesion, cliente.cuit_cliente)
         return [
             {
                 "id_contacto": contacto.id_contacto,

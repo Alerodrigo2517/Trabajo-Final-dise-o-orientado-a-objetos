@@ -10,7 +10,7 @@ from src.models.orm import ClientesContactoORM, PresupuestoORM, TrabajoORM
 
 class WorkRepository:
     @staticmethod
-    def list_works(sesion: Session) -> list[TrabajoORM]:
+    def listar_trabajos(sesion: Session) -> list[TrabajoORM]:
         sentencia = (
             select(TrabajoORM)
             .options(
@@ -24,21 +24,21 @@ class WorkRepository:
         return list(sesion.scalars(sentencia).unique())
 
     @staticmethod
-    def create_work(sesion: Session, trabajo: TrabajoORM) -> TrabajoORM:
+    def crear_trabajo(sesion: Session, trabajo: TrabajoORM) -> TrabajoORM:
         sesion.add(trabajo)
         sesion.flush()
         return trabajo
 
     @staticmethod
-    def get_work(sesion: Session, id_trabajo: int) -> TrabajoORM | None:
+    def obtener_trabajo(sesion: Session, id_trabajo: int) -> TrabajoORM | None:
         return sesion.get(TrabajoORM, id_trabajo)
 
     @staticmethod
-    def work_for_budget(sesion: Session, id_presupuesto: int) -> TrabajoORM | None:
+    def obtener_trabajo_por_presupuesto(sesion: Session, id_presupuesto: int) -> TrabajoORM | None:
         return sesion.scalar(select(TrabajoORM).where(TrabajoORM.fk_presupuesto == id_presupuesto))
 
     @staticmethod
-    def update_work(
+    def actualizar_trabajo(
         sesion: Session,
         trabajo: TrabajoORM,
         *,

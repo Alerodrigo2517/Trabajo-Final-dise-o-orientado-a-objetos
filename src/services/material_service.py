@@ -4,23 +4,23 @@ from decimal import Decimal
 
 from sqlalchemy.exc import IntegrityError
 
-from src.core.database import get_session
-from src.core.validators import clean_text, positive_decimal
+from src.core.database import obtener_sesion_bd
+from src.core.validators import limpiar_texto, validar_decimal_positivo
 from src.repositories.material_repository import MaterialRepository
 
 
-def list_suppliers() -> list[dict]:
-    with get_session() as sesion:
-        proveedores = MaterialRepository.list_suppliers(sesion)
+def listar_proveedores() -> list[dict]:
+    with obtener_sesion_bd() as sesion:
+        proveedores = MaterialRepository.listar_proveedores(sesion)
         return [
             {"id_proveedor": fila.id_proveedor, "nombre": fila.nombre, "rubro": fila.rubro, "telefono": fila.telefono}
             for fila in proveedores
         ]
 
 
-def list_materials() -> list[dict]:
-    with get_session() as sesion:
-        materiales = MaterialRepository.list_materials(sesion)
+def listar_materiales() -> list[dict]:
+    with obtener_sesion_bd() as sesion:
+        materiales = MaterialRepository.listar_materiales(sesion)
         return [
             {
                 "id_material": fila.id_material,
@@ -34,26 +34,26 @@ def list_materials() -> list[dict]:
         ]
 
 
-def create_supplier(nombre: str, rubro: str, telefono: str) -> dict:
-    nombre_limpio = clean_text(nombre, "el nombre del proveedor", 100)
-    rubro_limpio = clean_text(rubro, "el rubro", 100)
-    telefono_limpio = clean_text(telefono, "el teléfono", 20)
-    with get_session() as sesion:
-        fila = MaterialRepository.create_supplier(
+def crear_proveedor(nombre: str, rubro: str, telefono: str) -> dict:
+    nombre_limpio = limpiar_texto(nombre, "el nombre del proveedor", 100)
+    rubro_limpio = limpiar_texto(rubro, "el rubro", 100)
+    telefono_limpio = limpiar_texto(telefono, "el teléfono", 20)
+    with obtener_sesion_bd() as sesion:
+        fila = MaterialRepository.crear_proveedor(
             sesion, nombre=nombre_limpio, rubro=rubro_limpio, telefono=telefono_limpio
         )
         return {"id_proveedor": fila.id_proveedor, "nombre": fila.nombre, "rubro": fila.rubro, "telefono": fila.telefono}
 
 
-def create_material(descripcion: str, precio_unitario, proveedor_id: int) -> dict:
-    descripcion_limpia = clean_text(descripcion, "la descripción", 150)
-    precio = positive_decimal(precio_unitario, "el precio unitario", permitir_cero=True)
+def crear_material(descripcion: str, precio_unitario, proveedor_id: int) -> dict:
+    descripcion_limpia = limpiar_texto(descripcion, "la descripción", 150)
+    precio = validar_decimal_positivo(precio_unitario, "el precio unitario", permitir_cero=True)
     try:
-        with get_session() as sesion:
-            proveedor = MaterialRepository.get_supplier(sesion, int(proveedor_id))
+        with obtener_sesion_bd() as sesion:
+            proveedor = MaterialRepository.obtener_proveedor(sesion, int(proveedor_id))
             if proveedor is None:
                 raise ValueError("El proveedor seleccionado ya no existe. Actualizá la pantalla.")
-            fila = MaterialRepository.create_material(
+            fila = MaterialRepository.crear_material(
                 sesion,
                 descripcion=descripcion_limpia,
                 precio_unitario=precio,

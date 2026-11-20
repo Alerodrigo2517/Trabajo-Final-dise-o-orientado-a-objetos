@@ -1,21 +1,21 @@
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.components.budget_form import render_budget_form
-from src.core.authorization import AUDITOR, is_admin
-from src.core.session import current_user, logout_user
-from src.services.dashboard_service import get_dashboard_summary
+from src.components.budget_form import mostrar_formulario_presupuesto
+from src.core.authorization import AUDITOR, es_administrador
+from src.core.session import obtener_usuario_actual, cerrar_sesion_usuario
+from src.services.dashboard_service import obtener_resumen_panel
 from src.ui import (
-    apply_theme,
-    client_entry_rows,
-    currency,
-    database_error,
-    kpi_card,
-    page_header,
-    render_sidebar_user,
-    section_header,
+    aplicar_tema,
+    mostrar_alta_cliente,
+    formatear_moneda,
+    mostrar_error_bd,
+    tarjeta_indicador,
+    encabezado_pagina,
+    mostrar_usuario_lateral,
+    encabezado_seccion,
 )
-from src.ui.login import render_login
+from src.ui.login import mostrar_inicio_sesion
 
 st.set_page_config(
     page_title="Herrería Don Francisco | Gestión del taller",
@@ -23,22 +23,22 @@ st.set_page_config(
     layout="wide",
 )
 st.session_state["_database_error_shown"] = False
-apply_theme()
+aplicar_tema()
 
-usuario = current_user()
+usuario = obtener_usuario_actual()
 if usuario is None:
-    render_login()
+    mostrar_inicio_sesion()
     st.stop()
 
 st.sidebar.divider()
-render_sidebar_user(usuario)
+mostrar_usuario_lateral(usuario)
 if st.sidebar.button("🚪 Cerrar sesión", width="stretch"):
-    logout_user()
+    cerrar_sesion_usuario()
     st.rerun()
 
 
 def inicio():
-    page_header(
+    encabezado_pagina(
         "CENTRO DE OPERACIONES",
         f"Hola, {usuario['nombre']}",
         "Supervisá el estado del taller, confeccioná presupuestos vinculados con producción y registrá clientes en un solo lugar.",
@@ -46,10 +46,10 @@ def inicio():
         mostrar_logo=True,
     )
     try:
-        resumen = get_dashboard_summary()
+        resumen = obtener_resumen_panel()
         indicadores = st.columns(4)
         with indicadores[0]:
-            kpi_card(
+            tarjeta_indicador(
                 "Presupuestos",
                 resumen["presupuestos_total"],
                 subtitulo=f"{resumen['clientes']} clientes registrados",
@@ -57,7 +57,7 @@ def inicio():
                 tono="amber",
             )
         with indicadores[1]:
-            kpi_card(
+            tarjeta_indicador(
                 "Trabajos activos",
                 resumen["trabajos_activos"],
                 subtitulo="Órdenes en fabricación",
@@ -65,7 +65,7 @@ def inicio():
                 tono="blue",
             )
         with indicadores[2]:
-            kpi_card(
+            tarjeta_indicador(
                 "Trabajos terminados",
                 resumen["trabajos_terminados"],
                 subtitulo="Obras finalizadas",
@@ -73,15 +73,15 @@ def inicio():
                 tono="emerald",
             )
         with indicadores[3]:
-            kpi_card(
+            tarjeta_indicador(
                 "Ingresos del mes",
-                currency(resumen["ingresos_mes"]),
+                formatear_moneda(resumen["ingresos_mes"]),
                 subtitulo=f"{resumen['materiales']} materiales en catálogo",
                 icono="💳",
                 tono="slate",
             )
     except SQLAlchemyError:
-        database_error()
+        mostrar_error_bd()
 
     st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
@@ -102,16 +102,16 @@ def inicio():
     if pestana_presupuesto is not None:
         with pestana_presupuesto:
             with st.container(border=True):
-                render_budget_form(prefijo_clave="inicio_presupuesto", compacto=False)
+                mostrar_formulario_presupuesto(prefijo_clave="inicio_presupuesto", compacto=False)
 
     if pestana_cliente is not None:
         with pestana_cliente:
             with st.container(border=True):
-                client_entry_rows(prefijo_clave="inicio_clientes")
+                mostrar_alta_cliente(prefijo_clave="inicio_clientes")
 
     with pestana_modulos:
         with st.container(border=True):
-            section_header(
+            encabezado_seccion(
                 "Módulos operativos del taller",
                 "Accedé directamente a cada sección de gestión comercial, producción y abastecimiento.",
                 icono="🧭",
@@ -160,7 +160,7 @@ paginas = {
         st.Page("src/pages/07_proveedores.py", title="Proveedores", icon=":material/factory:"),
     ],
 }
-if is_admin(usuario):
+if es_administrador(usuario):
     paginas["Administración"] = [
         st.Page("src/pages/06_usuarios.py", title="Usuarios", icon=":material/manage_accounts:")
     ]

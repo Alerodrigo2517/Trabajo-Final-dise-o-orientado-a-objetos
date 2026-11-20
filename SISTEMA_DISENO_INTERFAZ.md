@@ -22,9 +22,9 @@ Tipografía: `Inter` (con fallback a la pila del sistema) y números tabulares (
 
 ## Estructura y componentes clave
 
-- **Pantalla de Login (`src/ui/login.py`):** Vista dividida a pantalla completa (oculta la barra lateral mientras no hay sesión iniciada), con tarjeta de presentación industrial a la izquierda y formulario de autenticación seguro a la derecha.
-- **Barra lateral (`app.py` + `render_sidebar_user`):** Identidad de marca con emblema iluminado, tarjeta de usuario activo con avatar de iniciales, indicador luminoso de rol (`Administrador`, `Operador`, `Auditor`) y navegación con estado activo destacado.
-- **Encabezado de página (`page_header`):** Tarjeta superior con barra lateral ámbar, etiqueta superior tipo cápsula (`eyebrow`), insignia de módulo (`badge`), título principal y descripción operativa.
-- **Tarjetas de indicadores (`kpi_card`):** Tarjetas elevadas con ícono temático (`amber`, `blue`, `emerald`, `slate`), cifra destacada y subtítulo explicativo en todas las páginas del sistema.
-- **Encabezados de sección (`section_header`):** Cabeceras internas de contenedor con ícono, título, subtítulo y etiqueta de estado.
-- **Tablas con barra de herramientas (`records_table`):** Buscador instantáneo integrado con contador de resultados en cápsula y estados vacíos ilustrados (`empty_state`).
+- **Pantalla de Login (`src/ui/autenticar_usuario.py`):** Vista dividida a pantalla completa (oculta la barra lateral mientras no hay sesión iniciada), con tarjeta de presentación industrial a la izquierda y formulario de autenticación seguro a la derecha.
+- **Barra lateral (`app.py` + `mostrar_usuario_lateral`):** Identidad de marca con emblema iluminado, tarjeta de usuario activo con avatar de iniciales, indicador luminoso de rol (`Administrador`, `Operador`, `Auditor`) y navegación con estado activo destacado.
+- **Encabezado de página (`encabezado_pagina`):** Tarjeta superior con barra lateral ámbar, etiqueta superior tipo cápsula (`eyebrow`), insignia de módulo (`badge`), título principal y descripción operativa.
+- **Tarjetas de indicadores (`tarjeta_indicador`):** Tarjetas elevadas con ícono temático (`amber`, `blue`, `emerald`, `slate`), cifra destacada y subtítulo explicativo en todas las páginas del sistema.
+- **Encabezados de sección (`encabezado_seccion`):** Cabeceras internas de contenedor con ícono, título, subtítulo y etiqueta de estado.
+- **Tablas con barra de herramientas (`mostrar_tabla_registros`):** Buscador instantáneo integrado con contador de resultados en cápsula y estados vacíos ilustrados (`mostrar_estado_vacio`).

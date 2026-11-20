@@ -5,8 +5,8 @@ from decimal import Decimal
 
 from sqlalchemy.exc import IntegrityError
 
-from src.core.database import get_session
-from src.core.validators import clean_text, normalize_cuit, positive_decimal
+from src.core.database import obtener_sesion_bd
+from src.core.validators import limpiar_texto, normalizar_cuit, validar_decimal_positivo
 from src.models.orm import DetallePresupuestoORM, PresupuestoORM
 from src.repositories.budget_repository import BudgetRepository
 from src.repositories.client_repository import ClientRepository
@@ -26,9 +26,9 @@ def totales(presupuesto: PresupuestoORM) -> tuple[Decimal, Decimal, Decimal]:
     return materiales, mano_obra, materiales + mano_obra
 
 
-def list_budgets() -> list[dict]:
-    with get_session() as sesion:
-        presupuestos = BudgetRepository.list_budgets(sesion)
+def listar_presupuestos() -> list[dict]:
+    with obtener_sesion_bd() as sesion:
+        presupuestos = BudgetRepository.listar_presupuestos(sesion)
         resultado = []
         for presupuesto in presupuestos:
             cliente = presupuesto.cliente_contacto.cliente
@@ -67,7 +67,7 @@ def list_budgets() -> list[dict]:
         return resultado
 
 
-def create_budget(
+def crear_presupuesto(
     *,
     cuit_cliente: str,
     id_contacto_cliente: int | None,
@@ -89,14 +89,14 @@ def create_budget(
     cuit_legacy = (cuit_cliente or "").strip()
     cuit_normalizado = cuit_legacy
     try:
-        cuit_normalizado = normalize_cuit(cuit_cliente)
+        cuit_normalizado = normalizar_cuit(cuit_cliente)
     except ValueError:
         # Se conserva compatibilidad con identificadores históricos que no
         # cumplen el rango actual de alta, para consultar presupuestos previos.
         pass
-    direccion_trabajo_limpia = clean_text(direccion_trabajo, "la dirección del trabajo", 100)
-    ciudad_trabajo_limpia = clean_text(ciudad_trabajo, "la ciudad del trabajo", 100)
-    tipo_limpio = clean_text(tipo_trabajo, "el tipo de trabajo", 50)
+    direccion_trabajo_limpia = limpiar_texto(direccion_trabajo, "la dirección del trabajo", 100)
+    ciudad_trabajo_limpia = limpiar_texto(ciudad_trabajo, "la ciudad del trabajo", 100)
+    tipo_limpio = limpiar_texto(tipo_trabajo, "el tipo de trabajo", 50)
     descripcion_limpia = (descripcion or "").strip()
     if len(descripcion_limpia) > 500:
         raise ValueError("La descripción admite hasta 500 caracteres.")
@@ -106,15 +106,15 @@ def create_budget(
         raise ValueError("Elegí una forma de cálculo válida.")
 
     if tipo_calculo == "PORCENTAJE":
-        porcentaje_mano_obra = positive_decimal(porcentaje, "el porcentaje de mano de obra", permitir_cero=True)
+        porcentaje_mano_obra = validar_decimal_positivo(porcentaje, "el porcentaje de mano de obra", permitir_cero=True)
         if porcentaje_mano_obra > 100:
             raise ValueError("El porcentaje de mano de obra no puede superar el 100%.")
         tarifa_mano_obra = None
         duracion = None
     else:
         porcentaje_mano_obra = None
-        tarifa_mano_obra = positive_decimal(tarifa_hora, "el costo por hora", permitir_cero=True)
-        duracion = positive_decimal(horas, "las horas estimadas", permitir_cero=True)
+        tarifa_mano_obra = validar_decimal_positivo(tarifa_hora, "el costo por hora", permitir_cero=True)
+        duracion = validar_decimal_positivo(horas, "las horas estimadas", permitir_cero=True)
 
     elementos_combinados: dict[int, Decimal] = {}
     for elemento in materiales:
@@ -125,29 +125,29 @@ def create_budget(
             id_material = int(id_material)
         except (TypeError, ValueError):
             raise ValueError("Elegí un material válido en cada renglón.") from None
-        cantidad = positive_decimal(elemento.get("cantidad", 0), "la cantidad de material")
+        cantidad = validar_decimal_positivo(elemento.get("cantidad", 0), "la cantidad de material")
         elementos_combinados[id_material] = elementos_combinados.get(id_material, Decimal("0")) + cantidad
 
     try:
-        with get_session() as sesion:
-            cliente = ClientRepository.get_by_cuit(sesion, cuit_legacy)
+        with obtener_sesion_bd() as sesion:
+            cliente = ClientRepository.obtener_por_cuit(sesion, cuit_legacy)
             if cliente is None and cuit_normalizado != cuit_legacy:
-                cliente = ClientRepository.get_by_cuit(sesion, cuit_normalizado)
+                cliente = ClientRepository.obtener_por_cuit(sesion, cuit_normalizado)
             if cliente is None:
                 raise ValueError("El cliente seleccionado no existe. Actualizá la lista.")
 
             if id_contacto_cliente is not None:
-                contacto = BudgetRepository.get_client_contact(sesion, int(id_contacto_cliente))
+                contacto = BudgetRepository.obtener_contacto_cliente(sesion, int(id_contacto_cliente))
                 if contacto is None or contacto.fk_cliente != cliente.cuit_cliente:
                     raise ValueError("El contacto seleccionado no pertenece a este cliente.")
                 if contacto.fecha_hasta is not None and contacto.fecha_hasta < fecha_presupuesto:
                     raise ValueError("Ese contacto ya no estaba vigente en la fecha del presupuesto.")
             else:
-                direccion_contacto_limpia = clean_text(direccion_contacto, "la dirección del cliente", 100)
-                ciudad_contacto_limpia = clean_text(ciudad_contacto, "la ciudad del cliente", 100)
-                telefono_limpio = clean_text(telefono_contacto, "el teléfono del cliente", 20)
-                ciudad_cliente = BudgetRepository.get_or_create_city(sesion, ciudad_contacto_limpia)
-                contacto = BudgetRepository.create_client_contact(
+                direccion_contacto_limpia = limpiar_texto(direccion_contacto, "la dirección del cliente", 100)
+                ciudad_contacto_limpia = limpiar_texto(ciudad_contacto, "la ciudad del cliente", 100)
+                telefono_limpio = limpiar_texto(telefono_contacto, "el teléfono del cliente", 20)
+                ciudad_cliente = BudgetRepository.obtener_o_crear_ciudad(sesion, ciudad_contacto_limpia)
+                contacto = BudgetRepository.crear_contacto_cliente(
                     sesion,
                     cuit_cliente=cliente.cuit_cliente,
                     direccion=direccion_contacto_limpia,
@@ -156,11 +156,11 @@ def create_budget(
                     fecha_inicio=fecha_presupuesto,
                 )
 
-            ciudad_trabajo = BudgetRepository.get_or_create_city(sesion, ciudad_trabajo_limpia)
-            ubicacion_trabajo = BudgetRepository.create_work_location(
+            ciudad_trabajo = BudgetRepository.obtener_o_crear_ciudad(sesion, ciudad_trabajo_limpia)
+            ubicacion_trabajo = BudgetRepository.crear_ubicacion_trabajo(
                 sesion, direccion=direccion_trabajo_limpia, ciudad=ciudad_trabajo
             )
-            fila_tipo = BudgetRepository.get_or_create_work_type(sesion, tipo_limpio)
+            fila_tipo = BudgetRepository.obtener_o_crear_tipo_trabajo(sesion, tipo_limpio)
             presupuesto = PresupuestoORM(
                 fecha_presupuesto=fecha_presupuesto,
                 fecha_vencimiento=fecha_vencimiento,
@@ -180,7 +180,7 @@ def create_budget(
             # en las relaciones bidireccionales de SQLAlchemy.
             sesion.add(presupuesto)
             for id_material, cantidad in elementos_combinados.items():
-                material = BudgetRepository.get_material(sesion, id_material)
+                material = BudgetRepository.obtener_material(sesion, id_material)
                 if material is None:
                     raise ValueError("Uno de los materiales ya no existe. Actualizá la pantalla.")
                 presupuesto.detalles.append(
@@ -191,27 +191,27 @@ def create_budget(
                         subtotal=cantidad * Decimal(material.precio_unitario),
                     )
                 )
-            BudgetRepository.create_budget(sesion, presupuesto)
+            BudgetRepository.crear_presupuesto(sesion, presupuesto)
             return presupuesto.id_presupuesto
     except IntegrityError as exc:
         raise ValueError("No se pudo guardar el presupuesto por una restricción de datos. Revisá el formulario.") from exc
 
 
-def update_budget_status(id_presupuesto: int, estado: str) -> None:
+def actualizar_estado_presupuesto(id_presupuesto: int, estado: str) -> None:
     if estado not in PRESUPUESTO_ESTADOS:
         raise ValueError("El estado elegido no es válido para un presupuesto.")
-    with get_session() as sesion:
-        presupuesto = BudgetRepository.get_budget(sesion, int(id_presupuesto))
+    with obtener_sesion_bd() as sesion:
+        presupuesto = BudgetRepository.obtener_presupuesto(sesion, int(id_presupuesto))
         if presupuesto is None:
             raise ValueError("El presupuesto ya no existe.")
-        BudgetRepository.update_status(sesion, presupuesto, estado)
+        BudgetRepository.actualizar_estado(sesion, presupuesto, estado)
 
 
-def materials_for_budget() -> list[dict]:
+def obtener_materiales_para_presupuesto() -> list[dict]:
     from src.repositories.material_repository import MaterialRepository
 
-    with get_session() as sesion:
-        filas = MaterialRepository.list_materials(sesion)
+    with obtener_sesion_bd() as sesion:
+        filas = MaterialRepository.listar_materiales(sesion)
         return [
             {"id_material": fila.id_material, "descripcion": fila.descripcion, "precio_unitario": Decimal(fila.precio_unitario)}
             for fila in filas

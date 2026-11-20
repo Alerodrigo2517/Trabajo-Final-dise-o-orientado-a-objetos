@@ -11,7 +11,7 @@ from src.models.orm import ClienteORM, MaterialORM, PagoORM, PresupuestoORM, Tra
 
 class DashboardRepository:
     @staticmethod
-    def get_summary(sesion: Session, inicio_mes: date, mes_siguiente: date) -> dict:
+    def obtener_resumen(sesion: Session, inicio_mes: date, mes_siguiente: date) -> dict:
         # La tabla presupuesto existente no tiene estado: informamos el total real.
         cantidad_presupuestos = sesion.scalar(select(func.count(PresupuestoORM.id_presupuesto))) or 0
         trabajo_activo = sesion.scalar(

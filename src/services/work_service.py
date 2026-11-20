@@ -4,8 +4,8 @@ from datetime import date
 
 from sqlalchemy.exc import IntegrityError
 
-from src.core.database import get_session
-from src.core.validators import clean_text
+from src.core.database import obtener_sesion_bd
+from src.core.validators import limpiar_texto
 from src.models.orm import TrabajoORM
 from src.repositories.budget_repository import BudgetRepository
 from src.repositories.work_repository import WorkRepository
@@ -13,9 +13,9 @@ from src.repositories.work_repository import WorkRepository
 ESTADOS_TRABAJO = ("PENDIENTE", "EN_PROCESO", "FINALIZADO", "CANCELADO")
 
 
-def list_works() -> list[dict]:
-    with get_session() as sesion:
-        filas = WorkRepository.list_works(sesion)
+def listar_trabajos() -> list[dict]:
+    with obtener_sesion_bd() as sesion:
+        filas = WorkRepository.listar_trabajos(sesion)
         return [
             {
                 "id_trabajo": fila.id_trabajo,
@@ -33,18 +33,18 @@ def list_works() -> list[dict]:
         ]
 
 
-def create_work(*, id_presupuesto: int, fecha_inicio: date | None, observaciones: str = "") -> int:
+def crear_trabajo(*, id_presupuesto: int, fecha_inicio: date | None, observaciones: str = "") -> int:
     observaciones_limpias = (observaciones or "").strip()
     if len(observaciones_limpias) > 500:
         raise ValueError("Las observaciones admiten hasta 500 caracteres.")
     try:
-        with get_session() as sesion:
-            presupuesto = BudgetRepository.get_budget(sesion, int(id_presupuesto))
+        with obtener_sesion_bd() as sesion:
+            presupuesto = BudgetRepository.obtener_presupuesto(sesion, int(id_presupuesto))
             if presupuesto is None:
                 raise ValueError("El presupuesto seleccionado ya no existe.")
             if presupuesto.estado != "APROBADO":
                 raise ValueError("Solo podés iniciar un trabajo con un presupuesto aprobado.")
-            if WorkRepository.work_for_budget(sesion, int(id_presupuesto)) is not None:
+            if WorkRepository.obtener_trabajo_por_presupuesto(sesion, int(id_presupuesto)) is not None:
                 raise ValueError("Ese presupuesto ya tiene una orden de trabajo.")
             trabajo = TrabajoORM(
                 presupuesto=presupuesto,
@@ -52,13 +52,13 @@ def create_work(*, id_presupuesto: int, fecha_inicio: date | None, observaciones
                 estado="PENDIENTE",
                 observaciones=observaciones_limpias or None,
             )
-            WorkRepository.create_work(sesion, trabajo)
+            WorkRepository.crear_trabajo(sesion, trabajo)
             return trabajo.id_trabajo
     except IntegrityError as exc:
         raise ValueError("Ese presupuesto ya tiene una orden de trabajo.") from exc
 
 
-def update_work(
+def actualizar_trabajo(
     *, id_trabajo: int, estado: str, fecha_inicio: date | None, fecha_fin: date | None, observaciones: str = ""
 ) -> None:
     if estado not in ESTADOS_TRABAJO:
@@ -70,11 +70,11 @@ def update_work(
     observaciones_limpias = (observaciones or "").strip()
     if len(observaciones_limpias) > 500:
         raise ValueError("Las observaciones admiten hasta 500 caracteres.")
-    with get_session() as sesion:
-        trabajo = WorkRepository.get_work(sesion, int(id_trabajo))
+    with obtener_sesion_bd() as sesion:
+        trabajo = WorkRepository.obtener_trabajo(sesion, int(id_trabajo))
         if trabajo is None:
             raise ValueError("La orden de trabajo ya no existe.")
-        WorkRepository.update_work(
+        WorkRepository.actualizar_trabajo(
             sesion,
             trabajo,
             estado=estado,

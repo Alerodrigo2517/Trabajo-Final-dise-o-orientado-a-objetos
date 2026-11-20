@@ -6,7 +6,7 @@ MySQL (tabla usuarios) → Usuario (dataclass) → Login → Sesión de Streamli
 
 - La cuenta se consulta en MySQL.
 - La fila se representa con la entidad inmutable Usuario, separada del modelo ORM.
-- El login comprueba el hash de contraseña con bcrypt.
+- El autenticar_usuario comprueba el hash de contraseña con bcrypt.
 - La sesión de Streamlit recuerda el usuario, su identificador y su rol; nunca guarda el hash.
 - Los permisos se aplican según el rol almacenado en MySQL: Administrador, Operador o Auditor.
 
@@ -26,10 +26,10 @@ La cuenta técnica en DB_USER es diferente de los usuarios de la aplicación. da
 
 ## Capas
 
-- app.py: muestra el login antes de la navegación.
+- app.py: muestra el autenticar_usuario antes de la navegación.
 - src/core/: configuración, sesiones, autorización y seguridad.
 - src/models/: dataclass de dominio y modelos ORM separados.
 - src/repositories/: consultas de persistencia.
 - src/services/: autenticación, roles y reglas de negocio.
-- src/ui/: interfaz compartida y login.
+- src/ui/: interfaz compartida y autenticar_usuario.
 - src/pages/: pantallas de gestión y administración de usuarios.

@@ -1,13 +1,13 @@
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.core.authorization import can_write
-from src.core.session import current_user
-from src.services.material_service import create_supplier, list_materials, list_suppliers
-from src.ui import database_error, kpi_card, page_header, records_table, section_header
+from src.core.authorization import puede_escribir
+from src.core.session import obtener_usuario_actual
+from src.services.material_service import crear_proveedor, listar_materiales, listar_proveedores
+from src.ui import mostrar_error_bd, tarjeta_indicador, encabezado_pagina, mostrar_tabla_registros, encabezado_seccion
 
-puede_editar = can_write(current_user())
-page_header(
+puede_editar = puede_escribir(obtener_usuario_actual())
+encabezado_pagina(
     "ABASTECIMIENTO",
     "Proveedores",
     "Administrá las empresas y comercios que abastecen el catálogo de materiales del taller.",
@@ -17,23 +17,23 @@ page_header(
 proveedores = []
 materiales = []
 try:
-    proveedores = list_suppliers()
-    materiales = list_materials()
+    proveedores = listar_proveedores()
+    materiales = listar_materiales()
 except SQLAlchemyError:
-    database_error()
+    mostrar_error_bd()
 
 ids_proveedores_asociados = {material["id_proveedor"] for material in materiales}
 cantidad_rubros = len({(s.get("rubro") or "").strip().lower() for s in proveedores if (s.get("rubro") or "").strip()})
 
 indicadores = st.columns(4)
 with indicadores[0]:
-    kpi_card("Proveedores totales", len(proveedores), "Registrados en el sistema", icono="🏭", tono="amber")
+    tarjeta_indicador("Proveedores totales", len(proveedores), "Registrados en el sistema", icono="🏭", tono="amber")
 with indicadores[1]:
-    kpi_card("Con insumos activos", len(ids_proveedores_asociados), "Presentes en el catálogo", icono="✅", tono="emerald")
+    tarjeta_indicador("Con insumos activos", len(ids_proveedores_asociados), "Presentes en el catálogo", icono="✅", tono="emerald")
 with indicadores[2]:
-    kpi_card("Rubros cubiertos", cantidad_rubros, "Especialidades registradas", icono="📦", tono="blue")
+    tarjeta_indicador("Rubros cubiertos", cantidad_rubros, "Especialidades registradas", icono="📦", tono="blue")
 with indicadores[3]:
-    kpi_card("Insumos provistos", len(materiales), "Total de materiales asociados", icono="🧱", tono="slate")
+    tarjeta_indicador("Insumos provistos", len(materiales), "Total de materiales asociados", icono="🧱", tono="slate")
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
@@ -47,7 +47,7 @@ else:
 if pestana_nuevo is not None:
     with pestana_nuevo:
         with st.container(border=True):
-            section_header(
+            encabezado_seccion(
                 "Registrar proveedor",
                 "Cargá los datos comerciales y de contacto para poder vincularlo con los materiales del catálogo.",
                 icono="🏭",
@@ -72,15 +72,15 @@ if pestana_nuevo is not None:
                 )
             if enviar_proveedor:
                 try:
-                    create_supplier(nombre_proveedor, rubro_proveedor, telefono_proveedor)
+                    crear_proveedor(nombre_proveedor, rubro_proveedor, telefono_proveedor)
                     st.success("✅ Proveedor registrado correctamente.")
                     st.rerun()
                 except (ValueError, SQLAlchemyError) as error:
-                    database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))
+                    mostrar_error_bd() if isinstance(error, SQLAlchemyError) else st.error(str(error))
 
 with pestana_lista:
     with st.container(border=True):
-        section_header(
+        encabezado_seccion(
             "Directorio de proveedores",
             "Consultá los rubros, teléfonos de contacto y cantidad de materiales provistos por cada empresa.",
             icono="🏭",
@@ -100,7 +100,7 @@ with pestana_lista:
             }
             for proveedor in proveedores
         ]
-        records_table(
+        mostrar_tabla_registros(
             filas_proveedores,
             "suppliers",
             "Todavía no hay proveedores registrados",

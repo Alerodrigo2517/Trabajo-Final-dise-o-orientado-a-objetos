@@ -18,7 +18,7 @@ from src.models.orm import (
 
 class BudgetRepository:
     @staticmethod
-    def list_budgets(sesion: Session) -> list[PresupuestoORM]:
+    def listar_presupuestos(sesion: Session) -> list[PresupuestoORM]:
         sentencia = (
             select(PresupuestoORM)
             .options(
@@ -35,7 +35,7 @@ class BudgetRepository:
         return list(sesion.scalars(sentencia).unique())
 
     @staticmethod
-    def get_budget(sesion: Session, id_presupuesto: int) -> PresupuestoORM | None:
+    def obtener_presupuesto(sesion: Session, id_presupuesto: int) -> PresupuestoORM | None:
         sentencia = (
             select(PresupuestoORM)
             .where(PresupuestoORM.id_presupuesto == id_presupuesto)
@@ -51,7 +51,7 @@ class BudgetRepository:
         return sesion.scalar(sentencia)
 
     @staticmethod
-    def get_or_create_city(sesion: Session, nombre: str) -> CiudadORM:
+    def obtener_o_crear_ciudad(sesion: Session, nombre: str) -> CiudadORM:
         ciudad = sesion.scalar(select(CiudadORM).where(func.lower(CiudadORM.nombre_ciudad) == nombre.lower()))
         if ciudad is None:
             ciudad = CiudadORM(nombre_ciudad=nombre)
@@ -60,7 +60,7 @@ class BudgetRepository:
         return ciudad
 
     @staticmethod
-    def get_or_create_work_type(sesion: Session, nombre: str) -> TipoTrabajoORM:
+    def obtener_o_crear_tipo_trabajo(sesion: Session, nombre: str) -> TipoTrabajoORM:
         tipo_trabajo = sesion.scalar(
             select(TipoTrabajoORM).where(func.lower(TipoTrabajoORM.nombre_tipo) == nombre.lower())
         )
@@ -71,11 +71,11 @@ class BudgetRepository:
         return tipo_trabajo
 
     @staticmethod
-    def get_client_contact(sesion: Session, id_contacto: int) -> ClientesContactoORM | None:
+    def obtener_contacto_cliente(sesion: Session, id_contacto: int) -> ClientesContactoORM | None:
         return sesion.get(ClientesContactoORM, id_contacto)
 
     @staticmethod
-    def create_client_contact(
+    def crear_contacto_cliente(
         sesion: Session,
         *,
         cuit_cliente: str,
@@ -96,28 +96,28 @@ class BudgetRepository:
         return contacto
 
     @staticmethod
-    def create_work_location(sesion: Session, *, direccion: str, ciudad: CiudadORM) -> UbicacionTrabajoORM:
+    def crear_ubicacion_trabajo(sesion: Session, *, direccion: str, ciudad: CiudadORM) -> UbicacionTrabajoORM:
         ubicacion = UbicacionTrabajoORM(domicilio=direccion, ciudad=ciudad)
         sesion.add(ubicacion)
         sesion.flush()
         return ubicacion
 
     @staticmethod
-    def list_materials(sesion: Session) -> list[MaterialORM]:
+    def listar_materiales(sesion: Session) -> list[MaterialORM]:
         return list(sesion.scalars(select(MaterialORM).order_by(MaterialORM.descripcion)))
 
     @staticmethod
-    def get_material(sesion: Session, id_material: int) -> MaterialORM | None:
+    def obtener_material(sesion: Session, id_material: int) -> MaterialORM | None:
         return sesion.get(MaterialORM, id_material)
 
     @staticmethod
-    def create_budget(sesion: Session, presupuesto: PresupuestoORM) -> PresupuestoORM:
+    def crear_presupuesto(sesion: Session, presupuesto: PresupuestoORM) -> PresupuestoORM:
         sesion.add(presupuesto)
         sesion.flush()
         return presupuesto
 
     @staticmethod
-    def update_status(sesion: Session, presupuesto: PresupuestoORM, estado: str) -> None:
+    def actualizar_estado(sesion: Session, presupuesto: PresupuestoORM, estado: str) -> None:
         presupuesto.estado = estado
         sesion.flush()
 

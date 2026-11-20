@@ -8,7 +8,7 @@ from src.models.orm import ClientesContactoORM, PagoORM, PresupuestoORM
 
 class PaymentRepository:
     @staticmethod
-    def list_payments(sesion: Session) -> list[PagoORM]:
+    def listar_pagos(sesion: Session) -> list[PagoORM]:
         sentencia = (
             select(PagoORM)
             .options(
@@ -21,7 +21,7 @@ class PaymentRepository:
         return list(sesion.scalars(sentencia).unique())
 
     @staticmethod
-    def create_payment(sesion: Session, pago: PagoORM) -> PagoORM:
+    def crear_pago(sesion: Session, pago: PagoORM) -> PagoORM:
         sesion.add(pago)
         sesion.flush()
         return pago

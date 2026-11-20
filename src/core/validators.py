@@ -4,7 +4,7 @@ import re
 from decimal import Decimal, InvalidOperation
 
 
-def clean_text(valor: str, nombre_campo: str, longitud_maxima: int) -> str:
+def limpiar_texto(valor: str, nombre_campo: str, longitud_maxima: int) -> str:
     limpio = " ".join((valor or "").strip().split())
     if not limpio:
         raise ValueError(f"Completá {nombre_campo}.")
@@ -13,21 +13,21 @@ def clean_text(valor: str, nombre_campo: str, longitud_maxima: int) -> str:
     return limpio
 
 
-def normalize_cuit(valor: str) -> str:
+def normalizar_cuit(valor: str) -> str:
     digitos = re.sub(r"\D", "", valor or "")
     if not 8 <= len(digitos) <= 11:
         raise ValueError("El CUIT/CUIL debe contener entre 8 y 11 dígitos.")
     return digitos
 
 
-def display_cuit(valor: str) -> str:
-    digitos = normalize_cuit(valor)
+def mostrar_cuit(valor: str) -> str:
+    digitos = normalizar_cuit(valor)
     if len(digitos) < 11:
         return digitos
     return f"{digitos[:2]}-{digitos[2:10]}-{digitos[10]}"
 
 
-def positive_decimal(valor: Decimal | int | float | str, nombre_campo: str, *, permitir_cero: bool = False) -> Decimal:
+def validar_decimal_positivo(valor: Decimal | int | float | str, nombre_campo: str, *, permitir_cero: bool = False) -> Decimal:
     try:
         monto = Decimal(str(valor))
     except (InvalidOperation, ValueError):

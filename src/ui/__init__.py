@@ -13,15 +13,15 @@ RUTA_LOGO = Path(__file__).resolve().parents[1] / "assets" / "logo_don_francisco
 
 
 @st.cache_data(show_spinner=False)
-def get_logo_data_uri() -> str:
+def obtener_logo_uri() -> str:
     if RUTA_LOGO.exists():
         codificado = base64.b64encode(RUTA_LOGO.read_bytes()).decode("ascii")
         return f"data:image/png;base64,{codificado}"
     return ""
 
 
-def apply_theme() -> None:
-    uri_logo = get_logo_data_uri()
+def aplicar_tema() -> None:
+    uri_logo = obtener_logo_uri()
     css_marca_lateral = (
         f"""
         [data-testid="stSidebarNav"]::before {{
@@ -689,7 +689,7 @@ def apply_theme() -> None:
     )
 
 
-def page_header(
+def encabezado_pagina(
     texto_superior: str,
     titulo: str,
     descripcion: str,
@@ -698,7 +698,7 @@ def page_header(
     mostrar_logo: bool = False,
 ) -> None:
     html_insignia = f'<span class="section-badge">{insignia}</span>' if insignia else ""
-    uri_logo = get_logo_data_uri() if mostrar_logo else ""
+    uri_logo = obtener_logo_uri() if mostrar_logo else ""
     if uri_logo:
         st.markdown(
             f"""
@@ -734,7 +734,7 @@ def page_header(
     )
 
 
-def kpi_card(
+def tarjeta_indicador(
     etiqueta: str,
     valor: str | int,
     subtitulo: str = "",
@@ -759,7 +759,7 @@ def kpi_card(
     )
 
 
-def section_header(titulo: str, subtitulo: str = "", icono: str = "🗂️", insignia: str = "") -> None:
+def encabezado_seccion(titulo: str, subtitulo: str = "", icono: str = "🗂️", insignia: str = "") -> None:
     html_secundario = f'<p class="section-banner-sub">{subtitulo}</p>' if subtitulo else ""
     html_insignia = f'<span class="section-badge">{insignia}</span>' if insignia else ""
     st.markdown(
@@ -779,7 +779,7 @@ def section_header(titulo: str, subtitulo: str = "", icono: str = "🗂️", ins
     )
 
 
-def render_sidebar_user(usuario: dict) -> None:
+def mostrar_usuario_lateral(usuario: dict) -> None:
     nombre = str(usuario.get("nombre") or usuario.get("usuario") or "Usuario").strip()
     partes = [p[0].upper() for p in nombre.split() if p][:2]
     iniciales = "".join(partes) or "U"
@@ -801,7 +801,7 @@ def render_sidebar_user(usuario: dict) -> None:
     )
 
 
-def database_error() -> None:
+def mostrar_error_bd() -> None:
     if st.session_state.get("_database_error_shown", False):
         return
     st.session_state["_database_error_shown"] = True
@@ -810,16 +810,16 @@ def database_error() -> None:
     )
 
 
-def handle_database_error(error: Exception) -> None:
+def gestionar_error_bd(error: Exception) -> None:
     if isinstance(error, SQLAlchemyError):
-        database_error()
+        mostrar_error_bd()
     elif isinstance(error, ValueError):
         st.error(str(error))
     else:
-        database_error()
+        mostrar_error_bd()
 
 
-def empty_state(titulo: str, descripcion: str, icono: str = "📭") -> None:
+def mostrar_estado_vacio(titulo: str, descripcion: str, icono: str = "📭") -> None:
     st.markdown(
         f"""
         <div class="empty-state">
@@ -832,12 +832,12 @@ def empty_state(titulo: str, descripcion: str, icono: str = "📭") -> None:
     )
 
 
-def currency(valor) -> str:
+def formatear_moneda(valor) -> str:
     monto = f"{float(valor or 0):,.2f}"
     return "$ " + monto.replace(",", "_").replace(".", ",").replace("_", ".")
 
 
-def records_table(registros: list[dict], clave: str, titulo_vacio: str, descripcion_vacia: str) -> None:
+def mostrar_tabla_registros(registros: list[dict], clave: str, titulo_vacio: str, descripcion_vacia: str) -> None:
     if not registros:
         estado_vacio(titulo_vacio, descripcion_vacia)
         return
@@ -867,16 +867,16 @@ def records_table(registros: list[dict], clave: str, titulo_vacio: str, descripc
     st.dataframe(marco, hide_index=True, width="stretch")
 
 
-def client_entry_rows(*, prefijo_clave: str = "client") -> None:
-    from src.core.authorization import can_write
-    from src.core.session import current_user
-    from src.services.client_service import create_client
+def mostrar_alta_cliente(*, prefijo_clave: str = "client") -> None:
+    from src.core.authorization import puede_escribir
+    from src.core.session import obtener_usuario_actual
+    from src.services.client_service import crear_cliente
 
-    if not can_write(current_user()):
+    if not puede_escribir(obtener_usuario_actual()):
         st.info("Tu perfil puede consultar clientes, pero no registrar ni modificar datos.")
         return
 
-    section_header(
+    encabezado_seccion(
         "Registrar nuevo cliente",
         "Completá la identificación fiscal del cliente y, opcionalmente, su domicilio y teléfono inicial.",
         icono="👥",
@@ -907,7 +907,7 @@ def client_entry_rows(*, prefijo_clave: str = "client") -> None:
 
     if enviado:
         try:
-            guardado = create_client(
+            guardado = crear_cliente(
                 cuit=cuit,
                 nombre=nombre,
                 apellido=apellido,
@@ -917,4 +917,4 @@ def client_entry_rows(*, prefijo_clave: str = "client") -> None:
             )
             st.success(f"✅ Cliente {guardado['nombre_completo']} ({guardado['cuit_display']}) registrado correctamente.")
         except (ValueError, SQLAlchemyError) as error:
-            handle_database_error(error)
+            gestionar_error_bd(error)

@@ -5,12 +5,12 @@ AUDITOR = "AUDITOR"
 CODIGOS_ROL = (ADMINISTRADOR, OPERADOR, AUDITOR)
 ETIQUETAS_ROL = {ADMINISTRADOR: "Administrador", OPERADOR: "Operador", AUDITOR: "Auditor · solo lectura"}
 
-def normalize_role(rol: str | None) -> str:
+def normalizar_rol(rol: str | None) -> str:
     valor = (rol or "").strip().upper()
     return valor if valor in CODIGOS_ROL else AUDITOR
 
-def can_write(usuario: dict | None) -> bool:
-    return bool(usuario) and normalize_role(usuario.get("role")) in (ADMINISTRADOR, OPERADOR)
+def puede_escribir(usuario: dict | None) -> bool:
+    return bool(usuario) and normalizar_rol(usuario.get("role")) in (ADMINISTRADOR, OPERADOR)
 
-def is_admin(usuario: dict | None) -> bool:
-    return bool(usuario) and normalize_role(usuario.get("role")) == ADMINISTRADOR
+def es_administrador(usuario: dict | None) -> bool:
+    return bool(usuario) and normalizar_rol(usuario.get("role")) == ADMINISTRADOR

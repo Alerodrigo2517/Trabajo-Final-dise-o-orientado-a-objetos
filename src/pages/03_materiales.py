@@ -1,20 +1,20 @@
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.core.authorization import can_write
-from src.core.session import current_user
-from src.services.material_service import create_material, list_materials, list_suppliers
+from src.core.authorization import puede_escribir
+from src.core.session import obtener_usuario_actual
+from src.services.material_service import crear_material, listar_materiales, listar_proveedores
 from src.ui import (
-    currency,
-    database_error,
-    kpi_card,
-    page_header,
-    records_table,
-    section_header,
+    formatear_moneda,
+    mostrar_error_bd,
+    tarjeta_indicador,
+    encabezado_pagina,
+    mostrar_tabla_registros,
+    encabezado_seccion,
 )
 
-puede_editar = can_write(current_user())
-page_header(
+puede_editar = puede_escribir(obtener_usuario_actual())
+encabezado_pagina(
     "ABASTECIMIENTO",
     "Materiales",
     "Mantené el catálogo de insumos metalúrgicos y sus precios unitarios de referencia para cotizar presupuestos.",
@@ -24,10 +24,10 @@ page_header(
 proveedores = []
 materiales = []
 try:
-    proveedores = list_suppliers()
-    materiales = list_materials()
+    proveedores = listar_proveedores()
+    materiales = listar_materiales()
 except SQLAlchemyError:
-    database_error()
+    mostrar_error_bd()
 
 precio_promedio = (
     sum(float(material["precio_unitario"] or 0) for material in materiales) / len(materiales)
@@ -39,13 +39,13 @@ proveedores_asociados = len({material["id_proveedor"] for material in materiales
 
 indicadores = st.columns(4)
 with indicadores[0]:
-    kpi_card("Materiales en catálogo", len(materiales), "Insumos listos para cotizar", icono="🧱", tono="amber")
+    tarjeta_indicador("Materiales en catálogo", len(materiales), "Insumos listos para cotizar", icono="🧱", tono="amber")
 with indicadores[1]:
-    kpi_card("Precio promedio", currency(precio_promedio), "Referencia del catálogo actual", icono="🏷️", tono="emerald")
+    tarjeta_indicador("Precio promedio", formatear_moneda(precio_promedio), "Referencia del catálogo actual", icono="🏷️", tono="emerald")
 with indicadores[2]:
-    kpi_card("Mayor valor unitario", currency(precio_maximo), "Insumo de mayor costo", icono="📈", tono="blue")
+    tarjeta_indicador("Mayor valor unitario", formatear_moneda(precio_maximo), "Insumo de mayor costo", icono="📈", tono="blue")
 with indicadores[3]:
-    kpi_card("Proveedores vinculados", proveedores_asociados, f"De {len(proveedores)} proveedores activos", icono="🏭", tono="slate")
+    tarjeta_indicador("Proveedores vinculados", proveedores_asociados, f"De {len(proveedores)} proveedores activos", icono="🏭", tono="slate")
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
@@ -59,7 +59,7 @@ else:
 if pestana_nuevo is not None:
     with pestana_nuevo:
         with st.container(border=True):
-            section_header(
+            encabezado_seccion(
                 "Registrar material",
                 "Definí la descripción técnica del insumo, su costo unitario y el proveedor habitual.",
                 icono="🧱",
@@ -88,7 +88,7 @@ if pestana_nuevo is not None:
                     )
                 if material_submit:
                     try:
-                        create_material(
+                        crear_material(
                             descripcion_material,
                             precio_material,
                             opciones_proveedores[etiqueta_proveedor]["id_proveedor"],
@@ -96,14 +96,14 @@ if pestana_nuevo is not None:
                         st.success("✅ Material registrado correctamente.")
                         st.rerun()
                     except (ValueError, SQLAlchemyError) as error:
-                        database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))
+                        mostrar_error_bd() if isinstance(error, SQLAlchemyError) else st.error(str(error))
             else:
                 st.info("Primero registrá un proveedor para poder asociarlo con el material.")
                 st.page_link("src/pages/07_proveedores.py", label="Ir a Proveedores", icon="🏭")
 
 with pestana_lista:
     with st.container(border=True):
-        section_header(
+        encabezado_seccion(
             "Materiales registrados",
             "Precios unitarios utilizados automáticamente al confeccionar presupuestos.",
             icono="🧱",
@@ -113,12 +113,12 @@ with pestana_lista:
             {
                 "N.º": fila["id_material"],
                 "Descripción": fila["descripcion"],
-                "Precio unitario": currency(fila["precio_unitario"]),
+                "Precio unitario": formatear_moneda(fila["precio_unitario"]),
                 "Proveedor": fila["proveedor"],
             }
             for fila in materiales
         ]
-        records_table(
+        mostrar_tabla_registros(
             filas_materiales,
             "materials",
             "Todavía no hay materiales cargados",
