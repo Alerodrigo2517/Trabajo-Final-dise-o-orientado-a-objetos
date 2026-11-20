@@ -12,6 +12,14 @@ from src.repositories.budget_repository import BudgetRepository
 from src.repositories.client_repository import ClientRepository
 
 PRESUPUESTO_ESTADOS = ("BORRADOR", "PENDIENTE", "APROBADO", "RECHAZADO", "VENCIDO", "CANCELADO")
+TRANSICIONES_PRESUPUESTO = {
+    "BORRADOR": {"PENDIENTE", "CANCELADO"},
+    "PENDIENTE": {"APROBADO", "RECHAZADO", "VENCIDO", "CANCELADO"},
+    "APROBADO": {"PENDIENTE", "RECHAZADO", "VENCIDO", "CANCELADO"},
+    "RECHAZADO": {"PENDIENTE", "CANCELADO"},
+    "VENCIDO": {"PENDIENTE", "CANCELADO"},
+    "CANCELADO": set(),
+}
 
 
 def totales(presupuesto: PresupuestoORM) -> tuple[Decimal, Decimal, Decimal]:
@@ -204,6 +212,17 @@ def actualizar_estado_presupuesto(id_presupuesto: int, estado: str) -> None:
         presupuesto = BudgetRepository.obtener_presupuesto(sesion, int(id_presupuesto))
         if presupuesto is None:
             raise ValueError("El presupuesto ya no existe.")
+        if estado == presupuesto.estado:
+            return
+        if estado not in TRANSICIONES_PRESUPUESTO[presupuesto.estado]:
+            raise ValueError(
+                f"No se puede cambiar un presupuesto de {presupuesto.estado.replace('_', ' ').lower()} "
+                f"a {estado.replace('_', ' ').lower()}."
+            )
+        if estado != "APROBADO" and (presupuesto.pagos or presupuesto.trabajo is not None):
+            raise ValueError(
+                "Un presupuesto con pagos u orden de trabajo debe permanecer aprobado."
+            )
         BudgetRepository.actualizar_estado(sesion, presupuesto, estado)
 
 

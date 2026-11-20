@@ -67,6 +67,8 @@ def actualizar_trabajo(
         raise ValueError("La fecha de finalización no puede ser anterior a la fecha de inicio.")
     if estado == "FINALIZADO" and fecha_fin is None:
         raise ValueError("Indicá la fecha de finalización para cerrar el trabajo.")
+    if estado != "FINALIZADO" and fecha_fin is not None:
+        raise ValueError("Solo una orden finalizada puede tener fecha de finalización.")
     observaciones_limpias = (observaciones or "").strip()
     if len(observaciones_limpias) > 500:
         raise ValueError("Las observaciones admiten hasta 500 caracteres.")

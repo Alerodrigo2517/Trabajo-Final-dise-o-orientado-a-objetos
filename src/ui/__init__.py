@@ -839,7 +839,7 @@ def formatear_moneda(valor) -> str:
 
 def mostrar_tabla_registros(registros: list[dict], clave: str, titulo_vacio: str, descripcion_vacia: str) -> None:
     if not registros:
-        estado_vacio(titulo_vacio, descripcion_vacia)
+        mostrar_estado_vacio(titulo_vacio, descripcion_vacia)
         return
     marco = pd.DataFrame(registros)
     col_busqueda, col_cantidad = st.columns([3, 1])
@@ -862,7 +862,11 @@ def mostrar_tabla_registros(registros: list[dict], clave: str, titulo_vacio: str
             unsafe_allow_html=True,
         )
     if marco.empty:
-        estado_vacio("Sin coincidencias para tu búsqueda", "Probá con otro término o limpiá el filtro para ver todos los registros.", icon="🔎")
+        mostrar_estado_vacio(
+            "Sin coincidencias para tu búsqueda",
+            "Probá con otro término o limpiá el filtro para ver todos los registros.",
+            icono="🔎",
+        )
         return
     st.dataframe(marco, hide_index=True, width="stretch")
 

@@ -65,10 +65,14 @@ if pestana_nuevo is not None:
                 icono="💵",
                 insignia="Ingreso de caja",
             )
-            if presupuestos:
+            presupuestos_para_cobro = [
+                fila for fila in presupuestos
+                if fila["estado"] == "APROBADO" and float(fila["saldo_estimado"] or 0) > 0
+            ]
+            if presupuestos_para_cobro:
                 opciones_presupuestos = {
                     f"#{fila['id_presupuesto']} · {fila['cliente']} · {fila['tipo_trabajo']} (Saldo: {formatear_moneda(fila['saldo_estimado'])})": fila
-                    for fila in presupuestos
+                    for fila in presupuestos_para_cobro
                 }
                 etiqueta_seleccionada = st.selectbox(
                     "1. Seleccionar presupuesto a imputar",
@@ -114,7 +118,7 @@ if pestana_nuevo is not None:
                     except (ValueError, SQLAlchemyError) as error:
                         mostrar_error_bd() if isinstance(error, SQLAlchemyError) else st.error(str(error))
             else:
-                st.info("Creá primero un presupuesto para poder asociar un pago.")
+                st.info("No hay presupuestos aprobados con saldo pendiente para registrar un cobro.")
                 st.page_link("src/pages/02_presupuestos.py", label="Ir a Presupuestos", icon="📐")
 
 with pestana_lista:

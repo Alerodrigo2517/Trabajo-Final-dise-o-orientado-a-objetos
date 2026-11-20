@@ -31,7 +31,7 @@ try:
 except SQLAlchemyError:
     mostrar_error_bd()
 
-cantidad_administradores = sum(1 for a in cuentas if a["rol"] == "ADMIN")
+cantidad_administradores = sum(1 for a in cuentas if a["rol"] == "ADMINISTRADOR")
 cantidad_operadores = sum(1 for a in cuentas if a["rol"] == "OPERADOR")
 cantidad_auditores = sum(1 for a in cuentas if a["rol"] == "AUDITOR")
 
@@ -148,7 +148,7 @@ with pestana_lista:
                         servicio.actualizar_rol(
                             usuario_seleccionado["id_usuario"],
                             rol_nuevo,
-                            actor_user_id=usuario["id_usuario"],
+                            id_usuario_actor=usuario["id_usuario"],
                         )
                         st.success("✅ Rol actualizado correctamente.")
                         st.rerun()

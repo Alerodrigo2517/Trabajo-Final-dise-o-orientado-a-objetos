@@ -9,6 +9,7 @@ from src.core.validators import limpiar_texto, validar_decimal_positivo
 from src.models.orm import PagoORM
 from src.repositories.budget_repository import BudgetRepository
 from src.repositories.payment_repository import PaymentRepository
+from src.services.budget_service import totales
 
 
 def listar_pagos() -> list[dict]:
@@ -41,6 +42,19 @@ def crear_pago(
             presupuesto = BudgetRepository.obtener_presupuesto(sesion, int(id_presupuesto))
             if presupuesto is None:
                 raise ValueError("El presupuesto seleccionado ya no existe.")
+            if presupuesto.estado != "APROBADO":
+                raise ValueError("Solo se pueden registrar pagos para presupuestos aprobados.")
+            total_presupuesto = totales(presupuesto)[2]
+            total_pagado = sum(
+                (Decimal(pago.monto) for pago in presupuesto.pagos), Decimal("0.00")
+            )
+            saldo_pendiente = total_presupuesto - total_pagado
+            if saldo_pendiente <= 0:
+                raise ValueError("El presupuesto ya no tiene saldo pendiente.")
+            if monto_pago > saldo_pendiente:
+                raise ValueError(
+                    f"El pago supera el saldo pendiente de {saldo_pendiente:.2f}."
+                )
             pago = PagoORM(
                 presupuesto=presupuesto,
                 fecha_pago=fecha_pago,
