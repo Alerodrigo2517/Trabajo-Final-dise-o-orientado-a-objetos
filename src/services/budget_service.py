@@ -91,9 +91,8 @@ def create_budget(
     try:
         normalized_cuit = normalize_cuit(client_cuit)
     except ValueError:
-        # Hay CUIT históricos de 8 dígitos en la base activa. Se admiten para
-        # consultar/crear presupuestos existentes, sin cambiar la validación
-        # estricta del alta de clientes.
+        # Se conserva compatibilidad con identificadores históricos que no
+        # cumplen el rango actual de alta, para consultar presupuestos previos.
         pass
     cleaned_work_address = clean_text(work_address, "la dirección del trabajo", 100)
     cleaned_work_city = clean_text(work_city, "la ciudad del trabajo", 100)

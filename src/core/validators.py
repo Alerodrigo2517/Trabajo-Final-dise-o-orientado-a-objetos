@@ -15,13 +15,15 @@ def clean_text(value: str, field_name: str, max_length: int) -> str:
 
 def normalize_cuit(value: str) -> str:
     digits = re.sub(r"\D", "", value or "")
-    if len(digits) != 11:
-        raise ValueError("El CUIT debe contener 11 dígitos.")
+    if not 8 <= len(digits) <= 11:
+        raise ValueError("El CUIT/CUIL debe contener entre 8 y 11 dígitos.")
     return digits
 
 
 def display_cuit(value: str) -> str:
     digits = normalize_cuit(value)
+    if len(digits) < 11:
+        return digits
     return f"{digits[:2]}-{digits[2:10]}-{digits[10]}"
 
 

@@ -891,7 +891,7 @@ def client_entry_rows(*, key_prefix: str = "client") -> None:
         with col_surname:
             last_name = st.text_input("Apellido", placeholder="Ej. Rodríguez", max_chars=45)
         with col_cuit:
-            cuit = st.text_input("CUIT / CUIL (11 dígitos)", placeholder="Ej. 20-12345678-9", max_chars=13)
+            cuit = st.text_input("CUIT / CUIL (8 a 11 dígitos)", placeholder="Ej. 12345678 o 20-12345678-9", max_chars=13)
 
         st.markdown('<p class="panel-heading" style="margin-top:0.65rem;">DOMICILIO Y TELÉFONO DE CONTACTO (OPCIONAL)</p>', unsafe_allow_html=True)
         st.caption("Si completás estos campos, el domicilio y teléfono quedarán asociados al cliente para sus presupuestos.")

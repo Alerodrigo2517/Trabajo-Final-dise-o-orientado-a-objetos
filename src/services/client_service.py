@@ -17,7 +17,7 @@ def list_clients() -> list[dict]:
         return [
             {
                 "cuit_cliente": client.cuit_cliente,
-                "cuit_display": display_cuit(client.cuit_cliente) if len(re.sub(r"\D", "", client.cuit_cliente)) == 11 else client.cuit_cliente,
+                "cuit_display": display_cuit(client.cuit_cliente),
                 "nombre": client.nombre,
                 "apellido": client.apellido,
                 "nombre_completo": f"{client.nombre} {client.apellido}",
