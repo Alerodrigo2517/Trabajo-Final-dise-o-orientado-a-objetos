@@ -10,8 +10,8 @@ from src.models.orm import ClientesContactoORM, PresupuestoORM, TrabajoORM
 
 class WorkRepository:
     @staticmethod
-    def list_works(session: Session) -> list[TrabajoORM]:
-        statement = (
+    def list_works(sesion: Session) -> list[TrabajoORM]:
+        sentencia = (
             select(TrabajoORM)
             .options(
                 joinedload(TrabajoORM.presupuesto)
@@ -21,35 +21,35 @@ class WorkRepository:
             )
             .order_by(TrabajoORM.fecha_inicio.desc(), TrabajoORM.id_trabajo.desc())
         )
-        return list(session.scalars(statement).unique())
+        return list(sesion.scalars(sentencia).unique())
 
     @staticmethod
-    def create_work(session: Session, work: TrabajoORM) -> TrabajoORM:
-        session.add(work)
-        session.flush()
-        return work
+    def create_work(sesion: Session, trabajo: TrabajoORM) -> TrabajoORM:
+        sesion.add(trabajo)
+        sesion.flush()
+        return trabajo
 
     @staticmethod
-    def get_work(session: Session, work_id: int) -> TrabajoORM | None:
-        return session.get(TrabajoORM, work_id)
+    def get_work(sesion: Session, id_trabajo: int) -> TrabajoORM | None:
+        return sesion.get(TrabajoORM, id_trabajo)
 
     @staticmethod
-    def work_for_budget(session: Session, budget_id: int) -> TrabajoORM | None:
-        return session.scalar(select(TrabajoORM).where(TrabajoORM.fk_presupuesto == budget_id))
+    def work_for_budget(sesion: Session, id_presupuesto: int) -> TrabajoORM | None:
+        return sesion.scalar(select(TrabajoORM).where(TrabajoORM.fk_presupuesto == id_presupuesto))
 
     @staticmethod
     def update_work(
-        session: Session,
-        work: TrabajoORM,
+        sesion: Session,
+        trabajo: TrabajoORM,
         *,
-        status: str,
-        start_date: date | None,
-        end_date: date | None,
-        observations: str | None,
+        estado: str,
+        fecha_inicio: date | None,
+        fecha_fin: date | None,
+        observaciones: str | None,
     ) -> None:
-        work.estado = status
-        work.fecha_inicio = start_date
-        work.fecha_fin = end_date
-        work.observaciones = observations
-        session.flush()
+        trabajo.estado = estado
+        trabajo.fecha_inicio = fecha_inicio
+        trabajo.fecha_fin = fecha_fin
+        trabajo.observaciones = observaciones
+        sesion.flush()
 

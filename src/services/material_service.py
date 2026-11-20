@@ -10,61 +10,61 @@ from src.repositories.material_repository import MaterialRepository
 
 
 def list_suppliers() -> list[dict]:
-    with get_session() as session:
-        suppliers = MaterialRepository.list_suppliers(session)
+    with get_session() as sesion:
+        proveedores = MaterialRepository.list_suppliers(sesion)
         return [
-            {"id_proveedor": row.id_proveedor, "nombre": row.nombre, "rubro": row.rubro, "telefono": row.telefono}
-            for row in suppliers
+            {"id_proveedor": fila.id_proveedor, "nombre": fila.nombre, "rubro": fila.rubro, "telefono": fila.telefono}
+            for fila in proveedores
         ]
 
 
 def list_materials() -> list[dict]:
-    with get_session() as session:
-        materials = MaterialRepository.list_materials(session)
+    with get_session() as sesion:
+        materiales = MaterialRepository.list_materials(sesion)
         return [
             {
-                "id_material": row.id_material,
-                "descripcion": row.descripcion,
-                "precio_unitario": Decimal(row.precio_unitario),
-                "id_proveedor": row.fk_proveedor,
-                "proveedor": row.proveedor.nombre,
-                "rubro": row.proveedor.rubro,
+                "id_material": fila.id_material,
+                "descripcion": fila.descripcion,
+                "precio_unitario": Decimal(fila.precio_unitario),
+                "id_proveedor": fila.fk_proveedor,
+                "proveedor": fila.proveedor.nombre,
+                "rubro": fila.proveedor.rubro,
             }
-            for row in materials
+            for fila in materiales
         ]
 
 
 def create_supplier(nombre: str, rubro: str, telefono: str) -> dict:
-    cleaned_name = clean_text(nombre, "el nombre del proveedor", 100)
-    cleaned_rubro = clean_text(rubro, "el rubro", 100)
-    cleaned_phone = clean_text(telefono, "el teléfono", 20)
-    with get_session() as session:
-        row = MaterialRepository.create_supplier(
-            session, nombre=cleaned_name, rubro=cleaned_rubro, telefono=cleaned_phone
+    nombre_limpio = clean_text(nombre, "el nombre del proveedor", 100)
+    rubro_limpio = clean_text(rubro, "el rubro", 100)
+    telefono_limpio = clean_text(telefono, "el teléfono", 20)
+    with get_session() as sesion:
+        fila = MaterialRepository.create_supplier(
+            sesion, nombre=nombre_limpio, rubro=rubro_limpio, telefono=telefono_limpio
         )
-        return {"id_proveedor": row.id_proveedor, "nombre": row.nombre, "rubro": row.rubro, "telefono": row.telefono}
+        return {"id_proveedor": fila.id_proveedor, "nombre": fila.nombre, "rubro": fila.rubro, "telefono": fila.telefono}
 
 
 def create_material(descripcion: str, precio_unitario, proveedor_id: int) -> dict:
-    cleaned_description = clean_text(descripcion, "la descripción", 150)
-    price = positive_decimal(precio_unitario, "el precio unitario", allow_zero=True)
+    descripcion_limpia = clean_text(descripcion, "la descripción", 150)
+    precio = positive_decimal(precio_unitario, "el precio unitario", permitir_cero=True)
     try:
-        with get_session() as session:
-            supplier = MaterialRepository.get_supplier(session, int(proveedor_id))
-            if supplier is None:
+        with get_session() as sesion:
+            proveedor = MaterialRepository.get_supplier(sesion, int(proveedor_id))
+            if proveedor is None:
                 raise ValueError("El proveedor seleccionado ya no existe. Actualizá la pantalla.")
-            row = MaterialRepository.create_material(
-                session,
-                descripcion=cleaned_description,
-                precio_unitario=price,
-                proveedor=supplier,
+            fila = MaterialRepository.create_material(
+                sesion,
+                descripcion=descripcion_limpia,
+                precio_unitario=precio,
+                proveedor=proveedor,
             )
             return {
-                "id_material": row.id_material,
-                "descripcion": row.descripcion,
-                "precio_unitario": Decimal(row.precio_unitario),
-                "id_proveedor": row.fk_proveedor,
-                "proveedor": supplier.nombre,
+                "id_material": fila.id_material,
+                "descripcion": fila.descripcion,
+                "precio_unitario": Decimal(fila.precio_unitario),
+                "id_proveedor": fila.fk_proveedor,
+                "proveedor": proveedor.nombre,
             }
     except IntegrityError as exc:
         raise ValueError("No se pudo guardar el material con ese proveedor.") from exc

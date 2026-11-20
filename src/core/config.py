@@ -1,18 +1,18 @@
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as campo
 from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy.engine import URL
 
-BASE_DIR = Path(__file__).resolve().parents[2]
-load_dotenv(BASE_DIR / ".env")
+DIRECTORIO_BASE = Path(__file__).resolve().parents[2]
+load_dotenv(DIRECTORIO_BASE / ".env")
 
 
 def database_url_from_environment() -> str | URL:
-    configured_url = os.getenv("DATABASE_URL", "").strip()
-    if configured_url:
-        return configured_url
+    url_configurada = os.getenv("DATABASE_URL", "").strip()
+    if url_configurada:
+        return url_configurada
 
     return URL.create(
         "mysql+pymysql",
@@ -27,19 +27,19 @@ def database_url_from_environment() -> str | URL:
 
 @dataclass(frozen=True)
 class Settings:
-    app_env: str = field(default_factory=lambda: os.getenv("APP_ENV", "development"))
-    app_name: str = field(default_factory=lambda: os.getenv("APP_NAME", "Sistema de Herrería"))
-    app_secret: str = field(default_factory=lambda: os.getenv("APP_SECRET", ""))
-    db_host: str = field(default_factory=lambda: os.getenv("DB_HOST", "127.0.0.1"))
-    db_port: str = field(default_factory=lambda: os.getenv("DB_PORT", "3306"))
-    db_name: str = field(default_factory=lambda: os.getenv("DB_NAME", "presupuesto_herreria_poo"))
-    db_user: str = field(default_factory=lambda: os.getenv("DB_USER", "root"))
-    db_password: str = field(default_factory=lambda: os.getenv("DB_PASSWORD", ""))
-    db_ssl_ca: str = field(default_factory=lambda: os.getenv("DB_SSL_CA", ""))
-    fernet_key: str = field(default_factory=lambda: os.getenv("FERNET_KEY", ""))
-    bcrypt_rounds: int = field(default_factory=lambda: int(os.getenv("BCRYPT_ROUNDS", "12")))
-    session_timeout_minutes: int = field(default_factory=lambda: int(os.getenv("SESSION_TIMEOUT_MINUTES", "60")))
-    database_url: str | URL = field(default_factory=database_url_from_environment)
+    entorno_aplicacion: str = campo(default_factory=lambda: os.getenv("APP_ENV", "development"))
+    nombre_aplicacion: str = campo(default_factory=lambda: os.getenv("APP_NAME", "Sistema de Herrería"))
+    secreto_aplicacion: str = campo(default_factory=lambda: os.getenv("APP_SECRET", ""))
+    servidor_bd: str = campo(default_factory=lambda: os.getenv("DB_HOST", "127.0.0.1"))
+    puerto_bd: str = campo(default_factory=lambda: os.getenv("DB_PORT", "3306"))
+    nombre_bd: str = campo(default_factory=lambda: os.getenv("DB_NAME", "presupuesto_herreria_poo"))
+    usuario_bd: str = campo(default_factory=lambda: os.getenv("DB_USER", "root"))
+    contrasena_bd: str = campo(default_factory=lambda: os.getenv("DB_PASSWORD", ""))
+    certificado_ssl_bd: str = campo(default_factory=lambda: os.getenv("DB_SSL_CA", ""))
+    clave_fernet: str = campo(default_factory=lambda: os.getenv("FERNET_KEY", ""))
+    rondas_bcrypt: int = campo(default_factory=lambda: int(os.getenv("BCRYPT_ROUNDS", "12")))
+    minutos_expiracion_sesion: int = campo(default_factory=lambda: int(os.getenv("SESSION_TIMEOUT_MINUTES", "60")))
+    url_base_datos: str | URL = campo(default_factory=database_url_from_environment)
 
 
-settings = Settings()
+configuracion = Settings()

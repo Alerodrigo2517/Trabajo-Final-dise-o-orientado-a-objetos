@@ -16,100 +16,100 @@ from src.ui import (
     section_header,
 )
 
-can_edit = can_write(current_user())
+puede_editar = can_write(current_user())
 page_header(
     "TESORERÍA Y COBRANZAS",
     "Pagos",
     "Registrá cobros parciales o totales asociados a cada presupuesto y consultá el estado de cuenta de cada obra.",
-    badge="Módulo Caja",
+    insignia="Módulo Caja",
 )
 
-budgets = []
-payments = []
+presupuestos = []
+pagos = []
 try:
-    budgets = list_budgets()
-    payments = list_payments()
+    presupuestos = list_budgets()
+    pagos = list_payments()
 except SQLAlchemyError:
     database_error()
 
-total_collected = sum(float(p["monto"] or 0) for p in payments)
-pending_balances = sum(max(0.0, float(b["saldo_estimado"] or 0)) for b in budgets if b["estado"] == "APROBADO")
-budgets_with_debt = sum(1 for b in budgets if float(b["saldo_estimado"] or 0) > 0 and b["estado"] == "APROBADO")
-avg_payment = (total_collected / len(payments)) if payments else 0.0
+total_cobrado = sum(float(p["monto"] or 0) for p in pagos)
+saldos_pendientes = sum(max(0.0, float(b["saldo_estimado"] or 0)) for b in presupuestos if b["estado"] == "APROBADO")
+presupuestos_con_saldo = sum(1 for b in presupuestos if float(b["saldo_estimado"] or 0) > 0 and b["estado"] == "APROBADO")
+pago_promedio = (total_cobrado / len(pagos)) if pagos else 0.0
 
-kpis = st.columns(4)
-with kpis[0]:
-    kpi_card("Total cobrado", currency(total_collected), "Ingresos acumulados en caja", icon="💳", tone="emerald")
-with kpis[1]:
-    kpi_card("Saldo por cobrar", currency(pending_balances), f"En {budgets_with_debt} presupuestos aprobados", icon="⏳", tone="amber")
-with kpis[2]:
-    kpi_card("Cobros registrados", len(payments), "Comprobantes asentados", icon="🧾", tone="blue")
-with kpis[3]:
-    kpi_card("Cobro promedio", currency(avg_payment), "Ticket medio por operación", icon="📊", tone="slate")
+indicadores = st.columns(4)
+with indicadores[0]:
+    kpi_card("Total cobrado", currency(total_cobrado), "Ingresos acumulados en caja", icono="💳", tono="emerald")
+with indicadores[1]:
+    kpi_card("Saldo por cobrar", currency(saldos_pendientes), f"En {presupuestos_con_saldo} presupuestos aprobados", icono="⏳", tono="amber")
+with indicadores[2]:
+    kpi_card("Cobros registrados", len(pagos), "Comprobantes asentados", icono="🧾", tono="blue")
+with indicadores[3]:
+    kpi_card("Cobro promedio", currency(pago_promedio), "Ticket medio por operación", icono="📊", tono="slate")
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
-if can_edit:
-    tab_list, tab_new = st.tabs(["📋 Historial de pagos y estado de cuenta", "➕ Registrar nuevo cobro"])
+if puede_editar:
+    pestana_lista, pestana_nuevo = st.tabs(["📋 Historial de pagos y estado de cuenta", "➕ Registrar nuevo cobro"])
 else:
     st.info("👁️ Tu perfil puede consultar el historial de cobros, pero no registrar nuevos pagos.")
-    tab_list = st.container()
-    tab_new = None
+    pestana_lista = st.container()
+    pestana_nuevo = None
 
-if tab_new is not None:
-    with tab_new:
+if pestana_nuevo is not None:
+    with pestana_nuevo:
         with st.container(border=True):
             section_header(
                 "Registrar un cobro",
                 "Seleccioná el presupuesto a imputar, verificá su saldo pendiente y asentá el pago recibido.",
-                icon="💵",
-                badge="Ingreso de caja",
+                icono="💵",
+                insignia="Ingreso de caja",
             )
-            if budgets:
-                budget_options = {
-                    f"#{row['id_presupuesto']} · {row['cliente']} · {row['tipo_trabajo']} (Saldo: {currency(row['saldo_estimado'])})": row
-                    for row in budgets
+            if presupuestos:
+                opciones_presupuestos = {
+                    f"#{fila['id_presupuesto']} · {fila['cliente']} · {fila['tipo_trabajo']} (Saldo: {currency(fila['saldo_estimado'])})": fila
+                    for fila in presupuestos
                 }
-                selected_label = st.selectbox(
+                etiqueta_seleccionada = st.selectbox(
                     "1. Seleccionar presupuesto a imputar",
-                    list(budget_options),
+                    list(opciones_presupuestos),
                     key="payment_budget_sel",
                 )
-                sel_budget = budget_options[selected_label]
+                presupuesto_seleccionado = opciones_presupuestos[etiqueta_seleccionada]
 
                 with st.form("payment_form"):
                     st.markdown('<p class="panel-heading">ESTADO DE CUENTA DEL PRESUPUESTO</p>', unsafe_allow_html=True)
                     b_col1, b_col2, b_col3 = st.columns(3)
                     with b_col1:
-                        st.text_input("Cliente", value=sel_budget["cliente"], disabled=True)
+                        st.text_input("Cliente", value=presupuesto_seleccionado["cliente"], disabled=True)
                     with b_col2:
-                        st.text_input("Total presupuestado", value=currency(sel_budget["total_estimado"]), disabled=True)
+                        st.text_input("Total presupuestado", value=currency(presupuesto_seleccionado["total_estimado"]), disabled=True)
                     with b_col3:
-                        st.text_input("Saldo estimado pendiente", value=currency(sel_budget["saldo_estimado"]), disabled=True)
+                        st.text_input("Saldo estimado pendiente", value=currency(presupuesto_seleccionado["saldo_estimado"]), disabled=True)
 
                     st.markdown('<p class="panel-heading" style="margin-top:0.65rem;">DETALLES DEL COBRO</p>', unsafe_allow_html=True)
                     p_col1, p_col2 = st.columns(2)
                     with p_col1:
-                        payment_date = st.date_input("Fecha del pago", value=date.today())
-                        amount = st.number_input("Monto recibido (ARS $)", min_value=0.0, value=0.0, step=1000.0)
+                        fecha_pago = st.date_input("Fecha del pago", value=date.today())
+                        monto = st.number_input("Monto recibido (ARS $)", min_value=0.0, value=0.0, step=1000.0)
                     with p_col2:
-                        method = st.selectbox("Medio de pago", ["Efectivo", "Transferencia", "Tarjeta", "Otro"])
-                        reference = st.text_input(
+                        metodo = st.selectbox("Medio de pago", ["Efectivo", "Transferencia", "Tarjeta", "Otro"])
+                        referencia = st.text_input(
                             "N.º de comprobante o referencia (opcional)",
                             max_chars=100,
                             placeholder="Ej. Transferencia CBU #48291",
                         )
-                    submitted = st.form_submit_button("💾 Guardar pago", type="primary", width="stretch")
-                if submitted:
+                    enviado = st.form_submit_button("💾 Guardar pago", type="primary", width="stretch")
+                if enviado:
                     try:
-                        payment_id = create_payment(
-                            budget_id=sel_budget["id_presupuesto"],
-                            payment_date=payment_date,
-                            amount=amount,
-                            method=method,
-                            reference=reference,
+                        id_pago = create_payment(
+                            id_presupuesto=presupuesto_seleccionado["id_presupuesto"],
+                            fecha_pago=fecha_pago,
+                            monto=monto,
+                            metodo=metodo,
+                            referencia=referencia,
                         )
-                        st.success(f"✅ Pago #{payment_id} registrado exitosamente.")
+                        st.success(f"✅ Pago #{id_pago} registrado exitosamente.")
                         st.rerun()
                     except (ValueError, SQLAlchemyError) as error:
                         database_error() if isinstance(error, SQLAlchemyError) else st.error(str(error))
@@ -117,58 +117,58 @@ if tab_new is not None:
                 st.info("Creá primero un presupuesto para poder asociar un pago.")
                 st.page_link("src/pages/02_presupuestos.py", label="Ir a Presupuestos", icon="📐")
 
-with tab_list:
-    if budgets:
+with pestana_lista:
+    if presupuestos:
         with st.container(border=True):
             section_header(
                 "Consulta rápida de saldo por presupuesto",
                 "Revisá cuánto se cobró y cuánto resta abonar en cualquier cotización.",
-                icon="🔎",
-                badge="Estado de cuenta",
+                icono="🔎",
+                insignia="Estado de cuenta",
             )
-            inspect_options = {
-                f"#{row['id_presupuesto']} · {row['cliente']} · {row['tipo_trabajo']}": row
-                for row in budgets
+            opciones_inspeccion = {
+                f"#{fila['id_presupuesto']} · {fila['cliente']} · {fila['tipo_trabajo']}": fila
+                for fila in presupuestos
             }
-            col_sel, col_summary = st.columns([1.15, 1.35], gap="large")
-            with col_sel:
-                inspect_label = st.selectbox(
+            col_selector, col_resumen = st.columns([1.15, 1.35], gap="large")
+            with col_selector:
+                etiqueta_inspeccion = st.selectbox(
                     "Presupuesto a consultar",
-                    list(inspect_options),
+                    list(opciones_inspeccion),
                     key="payment_inspect_budget",
                 )
-                inspected = inspect_options[inspect_label]
+                inspeccionado = opciones_inspeccion[etiqueta_inspeccion]
                 st.caption(
-                    f"Estado comercial: **{inspected['estado'].replace('_', ' ').title()}** · "
-                    f"Fecha: **{inspected['fecha']}**"
+                    f"Estado comercial: **{inspeccionado['estado'].replace('_', ' ').title()}** · "
+                    f"Fecha: **{inspeccionado['fecha']}**"
                 )
-            with col_summary:
+            with col_resumen:
                 m1, m2, m3 = st.columns(3)
-                m1.metric("Total estimado", currency(inspected["total_estimado"]))
-                m2.metric("Pagado", currency(inspected["pagado"]))
-                m3.metric("Saldo pendiente", currency(inspected["saldo_estimado"]))
+                m1.metric("Total estimado", currency(inspeccionado["total_estimado"]))
+                m2.metric("Pagado", currency(inspeccionado["pagado"]))
+                m3.metric("Saldo pendiente", currency(inspeccionado["saldo_estimado"]))
 
     with st.container(border=True):
         section_header(
             "Registro histórico de pagos",
             "Detalle de todos los cobros asentados con su fecha, cliente, monto, medio de pago y comprobante.",
-            icon="📊",
-            badge=f"{len(payments)} pagos",
+            icono="📊",
+            insignia=f"{len(pagos)} pagos",
         )
-        payment_rows = [
+        filas_pagos = [
             {
-                "N.º": row["id_pago"],
-                "Fecha": row["fecha"],
-                "Presupuesto": f"#{row['id_presupuesto']}",
-                "Cliente": row["cliente"],
-                "Monto": currency(row["monto"]),
-                "Método": row["metodo"],
-                "Referencia": row["referencia"],
+                "N.º": fila["id_pago"],
+                "Fecha": fila["fecha"],
+                "Presupuesto": f"#{fila['id_presupuesto']}",
+                "Cliente": fila["cliente"],
+                "Monto": currency(fila["monto"]),
+                "Método": fila["metodo"],
+                "Referencia": fila["referencia"],
             }
-            for row in payments
+            for fila in pagos
         ]
         records_table(
-            payment_rows,
+            filas_pagos,
             "payments",
             "Todavía no hay pagos registrados",
             "Abrí la pestaña «Registrar nuevo cobro» para cargar el primer movimiento de caja.",

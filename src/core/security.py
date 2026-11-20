@@ -1,17 +1,17 @@
 import bcrypt
 
 
-def hash_password(password: str) -> str:
-    if len(password) < 8:
+def hash_password(contrasena: str) -> str:
+    if len(contrasena) < 8:
         raise ValueError("La contraseña debe tener 8 caracteres, como mínimo.")
 
-    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
-    return hashed.decode("utf-8")
+    hash_calculado = bcrypt.hashpw(contrasena.encode("utf-8"), bcrypt.gensalt())
+    return hash_calculado.decode("utf-8")
 
 
-def verify_password(password: str, password_hash: str) -> bool:
+def verify_password(contrasena: str, hash_contrasena: str) -> bool:
     return bcrypt.checkpw(
-        password.encode("utf-8"),
-        password_hash.encode("utf-8"),
+        contrasena.encode("utf-8"),
+        hash_contrasena.encode("utf-8"),
     )
 """  ----"""

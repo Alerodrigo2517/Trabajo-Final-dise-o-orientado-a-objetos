@@ -14,73 +14,73 @@ from src.ui import (
     section_header,
 )
 
-user = current_user()
-can_edit = can_write(user)
+usuario = current_user()
+puede_editar = can_write(usuario)
 
 page_header(
     "VENTAS Y COTIZACIONES",
     "Presupuestos",
     "Confeccioná cotizaciones detalladas con materiales y mano de obra, y gestioná el ciclo de aprobación comercial.",
-    badge="Módulo Comercial",
+    insignia="Módulo Comercial",
 )
 
-budgets = []
+presupuestos = []
 try:
-    budgets = list_budgets()
+    presupuestos = list_budgets()
 except SQLAlchemyError:
     database_error()
 
-total_count = len(budgets)
-approved_count = sum(1 for b in budgets if b["estado"] == "APROBADO")
-pending_count = sum(1 for b in budgets if b["estado"] in ("BORRADOR", "PENDIENTE"))
-total_quoted = sum(float(b["total_estimado"] or 0) for b in budgets)
+cantidad_total = len(presupuestos)
+cantidad_aprobados = sum(1 for b in presupuestos if b["estado"] == "APROBADO")
+cantidad_pendientes = sum(1 for b in presupuestos if b["estado"] in ("BORRADOR", "PENDIENTE"))
+total_cotizado = sum(float(b["total_estimado"] or 0) for b in presupuestos)
 
-kpis = st.columns(4)
-with kpis[0]:
-    kpi_card("Total presupuestos", total_count, "Emitidos en el sistema", icon="📐", tone="amber")
-with kpis[1]:
-    kpi_card("Aprobados", approved_count, "Listos para producción", icon="✅", tone="emerald")
-with kpis[2]:
-    kpi_card("En evaluación", pending_count, "Borrador o pendientes", icon="⏳", tone="blue")
-with kpis[3]:
-    kpi_card("Volumen cotizado", currency(total_quoted), "Suma total estimada", icon="💰", tone="slate")
+indicadores = st.columns(4)
+with indicadores[0]:
+    kpi_card("Total presupuestos", cantidad_total, "Emitidos en el sistema", icono="📐", tono="amber")
+with indicadores[1]:
+    kpi_card("Aprobados", cantidad_aprobados, "Listos para producción", icono="✅", tono="emerald")
+with indicadores[2]:
+    kpi_card("En evaluación", cantidad_pendientes, "Borrador o pendientes", icono="⏳", tono="blue")
+with indicadores[3]:
+    kpi_card("Volumen cotizado", currency(total_cotizado), "Suma total estimada", icono="💰", tono="slate")
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
-if can_edit:
-    tab_list, tab_new = st.tabs(["📋 Historial y estados de presupuestos", "➕ Crear nuevo presupuesto"])
+if puede_editar:
+    pestana_lista, pestana_nuevo = st.tabs(["📋 Historial y estados de presupuestos", "➕ Crear nuevo presupuesto"])
 else:
     st.info("👁️ Tu perfil puede consultar presupuestos, pero no crear ni cambiar sus estados.")
-    tab_list = st.container()
-    tab_new = None
+    pestana_lista = st.container()
+    pestana_nuevo = None
 
-if tab_new is not None:
-    with tab_new:
+if pestana_nuevo is not None:
+    with pestana_nuevo:
         with st.container(border=True):
-            render_budget_form(key_prefix="pagina_presupuestos")
+            render_budget_form(prefijo_clave="pagina_presupuestos")
 
-with tab_list:
-    if can_edit and budgets:
+with pestana_lista:
+    if puede_editar and presupuestos:
         with st.container(border=True):
             section_header(
                 "Actualizar estado comercial",
                 "Cambiá el estado de una cotización (al pasar a Aprobado se habilita su orden de trabajo).",
-                icon="🔄",
-                badge="Gestión de estado",
+                icono="🔄",
+                insignia="Gestión de estado",
             )
-            budget_options = {
-                f"#{budget['id_presupuesto']} · {budget['cliente']} · {budget['tipo_trabajo']} ({budget['estado']})": budget
-                for budget in budgets
+            opciones_presupuestos = {
+                f"#{presupuesto['id_presupuesto']} · {presupuesto['cliente']} · {presupuesto['tipo_trabajo']} ({presupuesto['estado']})": presupuesto
+                for presupuesto in presupuestos
             }
-            col_sel, col_form = st.columns([1.3, 1], gap="large")
-            with col_sel:
-                selected_label = st.selectbox("Seleccionar presupuesto", list(budget_options), key="budget_status_selection")
-                selected_budget = budget_options[selected_label]
+            col_selector, col_formulario = st.columns([1.3, 1], gap="large")
+            with col_selector:
+                etiqueta_seleccionada = st.selectbox("Seleccionar presupuesto", list(opciones_presupuestos), key="budget_status_selection")
+                presupuesto_seleccionado = opciones_presupuestos[etiqueta_seleccionada]
                 st.caption(
-                    f"Cliente: **{selected_budget['cliente']}** · Total estimado: **{currency(selected_budget['total_estimado'])}** · "
-                    f"Saldo: **{currency(selected_budget['saldo_estimado'])}**"
+                    f"Cliente: **{presupuesto_seleccionado['cliente']}** · Total estimado: **{currency(presupuesto_seleccionado['total_estimado'])}** · "
+                    f"Saldo: **{currency(presupuesto_seleccionado['saldo_estimado'])}**"
                 )
-            labels = {
+            etiquetas = {
                 "BORRADOR": "Borrador",
                 "PENDIENTE": "Pendiente",
                 "APROBADO": "Aprobado",
@@ -88,18 +88,18 @@ with tab_list:
                 "VENCIDO": "Vencido",
                 "CANCELADO": "Cancelado",
             }
-            with col_form:
+            with col_formulario:
                 with st.form("budget_status_form"):
-                    new_status = st.selectbox(
+                    estado_nuevo = st.selectbox(
                         "Nuevo estado",
                         PRESUPUESTO_ESTADOS,
-                        index=PRESUPUESTO_ESTADOS.index(selected_budget["estado"]),
-                        format_func=lambda value: labels[value],
+                        index=PRESUPUESTO_ESTADOS.index(presupuesto_seleccionado["estado"]),
+                        format_func=lambda valor: etiquetas[valor],
                     )
                     update = st.form_submit_button("Guardar nuevo estado", type="primary", width="stretch")
                 if update:
                     try:
-                        update_budget_status(selected_budget["id_presupuesto"], new_status)
+                        update_budget_status(presupuesto_seleccionado["id_presupuesto"], estado_nuevo)
                         st.success("✅ Estado del presupuesto actualizado correctamente.")
                         st.rerun()
                     except (ValueError, SQLAlchemyError) as error:
@@ -112,27 +112,27 @@ with tab_list:
         section_header(
             "Registro histórico de presupuestos",
             "Detalle de costos de materiales, mano de obra, pagos acumulados y saldo estimado.",
-            icon="📊",
-            badge=f"{total_count} presupuestos",
+            icono="📊",
+            insignia=f"{cantidad_total} presupuestos",
         )
-        rows = [
+        filas = [
             {
-                "N.º": budget["id_presupuesto"],
-                "Fecha": budget["fecha"],
-                "Cliente": budget["cliente"],
-                "Trabajo": budget["tipo_trabajo"],
-                "Ubicación": f"{budget['ubicacion']}, {budget['ciudad']}",
-                "Estado": budget["estado"].replace("_", " ").title(),
-                "Materiales": currency(budget["materiales"]),
-                "Mano de obra": currency(budget["mano_obra"]),
-                "Total estimado": currency(budget["total_estimado"]),
-                "Pagado": currency(budget["pagado"]),
-                "Saldo estimado": currency(budget["saldo_estimado"]),
+                "N.º": presupuesto["id_presupuesto"],
+                "Fecha": presupuesto["fecha"],
+                "Cliente": presupuesto["cliente"],
+                "Trabajo": presupuesto["tipo_trabajo"],
+                "Ubicación": f"{presupuesto['ubicacion']}, {presupuesto['ciudad']}",
+                "Estado": presupuesto["estado"].replace("_", " ").title(),
+                "Materiales": currency(presupuesto["materiales"]),
+                "Mano de obra": currency(presupuesto["mano_obra"]),
+                "Total estimado": currency(presupuesto["total_estimado"]),
+                "Pagado": currency(presupuesto["pagado"]),
+                "Saldo estimado": currency(presupuesto["saldo_estimado"]),
             }
-            for budget in budgets
+            for presupuesto in presupuestos
         ]
         records_table(
-            rows,
+            filas,
             "presupuestos_db",
             "Todavía no hay presupuestos registrados",
             "Abrí la pestaña «Crear nuevo presupuesto» para cargar la primera cotización.",

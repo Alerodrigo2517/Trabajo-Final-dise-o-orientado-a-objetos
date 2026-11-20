@@ -7,12 +7,12 @@ from src.repositories.dashboard_repository import DashboardRepository
 
 
 def get_dashboard_summary() -> dict:
-    today = date.today()
-    month_start = today.replace(day=1)
-    if month_start.month == 12:
-        next_month = month_start.replace(year=month_start.year + 1, month=1)
+    hoy = date.today()
+    inicio_mes = hoy.replace(day=1)
+    if inicio_mes.month == 12:
+        mes_siguiente = inicio_mes.replace(year=inicio_mes.year + 1, month=1)
     else:
-        next_month = month_start.replace(month=month_start.month + 1)
+        mes_siguiente = inicio_mes.replace(month=inicio_mes.month + 1)
 
-    with get_session() as session:
-        return DashboardRepository.get_summary(session, month_start, next_month)
+    with get_session() as sesion:
+        return DashboardRepository.get_summary(sesion, inicio_mes, mes_siguiente)

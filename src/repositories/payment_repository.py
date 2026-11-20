@@ -8,8 +8,8 @@ from src.models.orm import ClientesContactoORM, PagoORM, PresupuestoORM
 
 class PaymentRepository:
     @staticmethod
-    def list_payments(session: Session) -> list[PagoORM]:
-        statement = (
+    def list_payments(sesion: Session) -> list[PagoORM]:
+        sentencia = (
             select(PagoORM)
             .options(
                 joinedload(PagoORM.presupuesto)
@@ -18,11 +18,11 @@ class PaymentRepository:
             )
             .order_by(PagoORM.fecha_pago.desc(), PagoORM.id_pago.desc())
         )
-        return list(session.scalars(statement).unique())
+        return list(sesion.scalars(sentencia).unique())
 
     @staticmethod
-    def create_payment(session: Session, payment: PagoORM) -> PagoORM:
-        session.add(payment)
-        session.flush()
-        return payment
+    def create_payment(sesion: Session, pago: PagoORM) -> PagoORM:
+        sesion.add(pago)
+        sesion.flush()
+        return pago
 

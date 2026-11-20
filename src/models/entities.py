@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as campo
 
 from .orm import (
     CiudadORM as Ciudad,
@@ -20,7 +20,7 @@ from .orm import (
 class Usuario:
     nombre: str
     usuario: str
-    contrasena_hash: str = field(repr=False)
+    contrasena_hash: str = campo(repr=False)
     id_usuario: int | None = None
     rol: str = "OPERADOR"
 

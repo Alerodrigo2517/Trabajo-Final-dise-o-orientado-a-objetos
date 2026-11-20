@@ -25,13 +25,13 @@ st.set_page_config(
 st.session_state["_database_error_shown"] = False
 apply_theme()
 
-user = current_user()
-if user is None:
+usuario = current_user()
+if usuario is None:
     render_login()
     st.stop()
 
 st.sidebar.divider()
-render_sidebar_user(user)
+render_sidebar_user(usuario)
 if st.sidebar.button("🚪 Cerrar sesión", width="stretch"):
     logout_user()
     st.rerun()
@@ -40,58 +40,58 @@ if st.sidebar.button("🚪 Cerrar sesión", width="stretch"):
 def inicio():
     page_header(
         "CENTRO DE OPERACIONES",
-        f"Hola, {user['nombre']}",
+        f"Hola, {usuario['nombre']}",
         "Supervisá el estado del taller, confeccioná presupuestos vinculados con producción y registrá clientes en un solo lugar.",
-        badge=f"Perfil: {user['role_label']}",
-        show_logo=True,
+        insignia=f"Perfil: {usuario['role_label']}",
+        mostrar_logo=True,
     )
     try:
-        summary = get_dashboard_summary()
-        metrics = st.columns(4)
-        with metrics[0]:
+        resumen = get_dashboard_summary()
+        indicadores = st.columns(4)
+        with indicadores[0]:
             kpi_card(
                 "Presupuestos",
-                summary["presupuestos_total"],
-                subtitle=f"{summary['clientes']} clientes registrados",
-                icon="📐",
-                tone="amber",
+                resumen["presupuestos_total"],
+                subtitulo=f"{resumen['clientes']} clientes registrados",
+                icono="📐",
+                tono="amber",
             )
-        with metrics[1]:
+        with indicadores[1]:
             kpi_card(
                 "Trabajos activos",
-                summary["trabajos_activos"],
-                subtitle="Órdenes en fabricación",
-                icon="⚙️",
-                tone="blue",
+                resumen["trabajos_activos"],
+                subtitulo="Órdenes en fabricación",
+                icono="⚙️",
+                tono="blue",
             )
-        with metrics[2]:
+        with indicadores[2]:
             kpi_card(
                 "Trabajos terminados",
-                summary["trabajos_terminados"],
-                subtitle="Obras finalizadas",
-                icon="✅",
-                tone="emerald",
+                resumen["trabajos_terminados"],
+                subtitulo="Obras finalizadas",
+                icono="✅",
+                tono="emerald",
             )
-        with metrics[3]:
+        with indicadores[3]:
             kpi_card(
                 "Ingresos del mes",
-                currency(summary["ingresos_mes"]),
-                subtitle=f"{summary['materiales']} materiales en catálogo",
-                icon="💳",
-                tone="slate",
+                currency(resumen["ingresos_mes"]),
+                subtitulo=f"{resumen['materiales']} materiales en catálogo",
+                icono="💳",
+                tono="slate",
             )
     except SQLAlchemyError:
         database_error()
 
     st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
-    if user.get("role") == AUDITOR:
+    if usuario.get("role") == AUDITOR:
         st.info("👁️ Estás en modo consulta (Auditor): podés explorar todos los módulos sin modificar registros.")
-        tab_modules = st.container()
-        tab_budget = None
-        tab_client = None
+        pestana_modulos = st.container()
+        pestana_presupuesto = None
+        pestana_cliente = None
     else:
-        tab_budget, tab_client, tab_modules = st.tabs(
+        pestana_presupuesto, pestana_cliente, pestana_modulos = st.tabs(
             [
                 "📐 Crear presupuesto rápido",
                 "👥 Alta rápida de clientes",
@@ -99,49 +99,49 @@ def inicio():
             ]
         )
 
-    if tab_budget is not None:
-        with tab_budget:
+    if pestana_presupuesto is not None:
+        with pestana_presupuesto:
             with st.container(border=True):
-                render_budget_form(key_prefix="inicio_presupuesto", compact=False)
+                render_budget_form(prefijo_clave="inicio_presupuesto", compacto=False)
 
-    if tab_client is not None:
-        with tab_client:
+    if pestana_cliente is not None:
+        with pestana_cliente:
             with st.container(border=True):
-                client_entry_rows(key_prefix="inicio_clientes")
+                client_entry_rows(prefijo_clave="inicio_clientes")
 
-    with tab_modules:
+    with pestana_modulos:
         with st.container(border=True):
             section_header(
                 "Módulos operativos del taller",
                 "Accedé directamente a cada sección de gestión comercial, producción y abastecimiento.",
-                icon="🧭",
-                badge="Navegación",
+                icono="🧭",
+                insignia="Navegación",
             )
-            row1 = st.columns(3, gap="medium")
-            with row1[0]:
+            fila1 = st.columns(3, gap="medium")
+            with fila1[0]:
                 st.markdown('<p class="panel-heading">COMERCIAL</p>', unsafe_allow_html=True)
                 st.page_link("src/pages/01_clientes.py", label="Padrón de Clientes", icon="👥")
                 st.caption("Consulta de clientes, CUIT y domicilios asociados.")
-            with row1[1]:
+            with fila1[1]:
                 st.markdown('<p class="panel-heading">COTIZACIONES</p>', unsafe_allow_html=True)
                 st.page_link("src/pages/02_presupuestos.py", label="Historial de Presupuestos", icon="📐")
                 st.caption("Creación de presupuestos y actualización de estados.")
-            with row1[2]:
+            with fila1[2]:
                 st.markdown('<p class="panel-heading">PRODUCCIÓN</p>', unsafe_allow_html=True)
                 st.page_link("src/pages/05_trabajos.py", label="Órdenes de Trabajo", icon="🛠️")
                 st.caption("Seguimiento de fabricación y fechas de entrega.")
 
             st.divider()
-            row2 = st.columns(3, gap="medium")
-            with row2[0]:
+            fila2 = st.columns(3, gap="medium")
+            with fila2[0]:
                 st.markdown('<p class="panel-heading">TESORERÍA</p>', unsafe_allow_html=True)
                 st.page_link("src/pages/04_pagos.py", label="Caja y Pagos", icon="💳")
                 st.caption("Registro de cobros, anticipos y saldos pendientes.")
-            with row2[1]:
+            with fila2[1]:
                 st.markdown('<p class="panel-heading">INSUMOS</p>', unsafe_allow_html=True)
                 st.page_link("src/pages/03_materiales.py", label="Catálogo de Materiales", icon="🧱")
                 st.caption("Precios unitarios de referencia para cotizar.")
-            with row2[2]:
+            with fila2[2]:
                 st.markdown('<p class="panel-heading">COMPRAS</p>', unsafe_allow_html=True)
                 st.page_link("src/pages/07_proveedores.py", label="Directorio de Proveedores", icon="🏭")
                 st.caption("Empresas proveedoras, rubros y teléfonos.")
@@ -160,7 +160,7 @@ paginas = {
         st.Page("src/pages/07_proveedores.py", title="Proveedores", icon=":material/factory:"),
     ],
 }
-if is_admin(user):
+if is_admin(usuario):
     paginas["Administración"] = [
         st.Page("src/pages/06_usuarios.py", title="Usuarios", icon=":material/manage_accounts:")
     ]

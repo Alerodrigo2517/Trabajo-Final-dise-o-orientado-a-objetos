@@ -4,21 +4,21 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from src.core.config import settings
+from src.core.config import configuracion
 
 
 class Base(DeclarativeBase):
     pass
 
 
-engine = create_engine(
-    settings.database_url,
+motor = create_engine(
+    configuracion.url_base_datos,
     pool_pre_ping=True,
     pool_recycle=1800
 )
 
-SessionLocal = sessionmaker(
-    bind=engine,
+FabricaSesiones = sessionmaker(
+    bind=motor,
     autoflush=False,
     expire_on_commit=False,
     class_=Session,
@@ -27,17 +27,17 @@ SessionLocal = sessionmaker(
 
 @contextmanager
 def get_session():
-    session = SessionLocal()
+    sesion = FabricaSesiones()
     try:
-        yield session
-        session.commit()
+        yield sesion
+        sesion.commit()
     except Exception:
-        session.rollback()
+        sesion.rollback()
         raise
     finally:
-        session.close()
+        sesion.close()
 
 
 def test_connection() -> bool:
-    with engine.connect() as connection:
-        return connection.scalar(select(1)) == 1
+    with motor.connect() as conexion:
+        return conexion.scalar(select(1)) == 1

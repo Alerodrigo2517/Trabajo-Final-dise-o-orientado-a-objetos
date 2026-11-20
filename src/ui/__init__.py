@@ -9,20 +9,20 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
-LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "logo_don_francisco.png"
+RUTA_LOGO = Path(__file__).resolve().parents[1] / "assets" / "logo_don_francisco.png"
 
 
 @st.cache_data(show_spinner=False)
 def get_logo_data_uri() -> str:
-    if LOGO_PATH.exists():
-        encoded = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
-        return f"data:image/png;base64,{encoded}"
+    if RUTA_LOGO.exists():
+        codificado = base64.b64encode(RUTA_LOGO.read_bytes()).decode("ascii")
+        return f"data:image/png;base64,{codificado}"
     return ""
 
 
 def apply_theme() -> None:
-    logo_uri = get_logo_data_uri()
-    sidebar_brand_css = (
+    uri_logo = get_logo_data_uri()
+    css_marca_lateral = (
         f"""
         [data-testid="stSidebarNav"]::before {{
           content: "";
@@ -32,18 +32,18 @@ def apply_theme() -> None:
           padding-bottom: 0.65rem;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           background-image:
-            url("{logo_uri}"),
+            url("{uri_logo}"),
             url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='52' viewBox='0 0 180 52'%3E%3Ctext x='0' y='23' fill='%23ffffff' font-family='Inter, system-ui, -apple-system, Segoe UI, sans-serif' font-size='17.5' font-weight='800' letter-spacing='-0.3'%3EHerrer%C3%ADa%3C/text%3E%3Ctext x='0' y='41' fill='%23fbbf24' font-family='Inter, system-ui, -apple-system, Segoe UI, sans-serif' font-size='10.5' font-weight='700' letter-spacing='1.6'%3EDON FRANCISCO%3C/text%3E%3C/svg%3E");
           background-repeat: no-repeat, no-repeat;
           background-position: left 2px, 58px 2px;
           background-size: 48px 48px, 175px 50px;
         }}
         """
-        if logo_uri
+        if uri_logo
         else ""
     )
     st.markdown(
-        f"""<style>{sidebar_brand_css}</style>""",
+        f"""<style>{css_marca_lateral}</style>""",
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -690,28 +690,28 @@ def apply_theme() -> None:
 
 
 def page_header(
-    eyebrow: str,
-    title: str,
-    description: str,
-    badge: str | None = None,
+    texto_superior: str,
+    titulo: str,
+    descripcion: str,
+    insignia: str | None = None,
     *,
-    show_logo: bool = False,
+    mostrar_logo: bool = False,
 ) -> None:
-    badge_html = f'<span class="section-badge">{badge}</span>' if badge else ""
-    logo_uri = get_logo_data_uri() if show_logo else ""
-    if logo_uri:
+    html_insignia = f'<span class="section-badge">{insignia}</span>' if insignia else ""
+    uri_logo = get_logo_data_uri() if mostrar_logo else ""
+    if uri_logo:
         st.markdown(
             f"""
             <div class="page-heading" style="display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap;">
-              <img src="{logo_uri}" alt="Herrería Don Francisco"
+              <img src="{uri_logo}" alt="Herrería Don Francisco"
                    style="width:88px;height:88px;object-fit:cover;border-radius:16px;border:2px solid #fde68a;box-shadow:0 6px 16px rgba(15,23,42,0.16);flex-shrink:0;" />
               <div style="flex:1;min-width:240px;">
                 <div class="page-heading-top">
-                  <p class="eyebrow">⚡ {eyebrow}</p>
-                  {badge_html}
+                  <p class="eyebrow">⚡ {texto_superior}</p>
+                  {html_insignia}
                 </div>
-                <h1>{title}</h1>
-                <p class="page-desc">{description}</p>
+                <h1>{titulo}</h1>
+                <p class="page-desc">{descripcion}</p>
               </div>
             </div>
             """,
@@ -723,11 +723,11 @@ def page_header(
         f"""
         <div class="page-heading">
           <div class="page-heading-top">
-            <p class="eyebrow">⚡ {eyebrow}</p>
-            {badge_html}
+            <p class="eyebrow">⚡ {texto_superior}</p>
+            {html_insignia}
           </div>
-          <h1>{title}</h1>
-          <p class="page-desc">{description}</p>
+          <h1>{titulo}</h1>
+          <p class="page-desc">{descripcion}</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -735,23 +735,23 @@ def page_header(
 
 
 def kpi_card(
-    label: str,
-    value: str | int,
-    subtitle: str = "",
-    icon: str = "📊",
-    tone: str = "amber",
+    etiqueta: str,
+    valor: str | int,
+    subtitulo: str = "",
+    icono: str = "📊",
+    tono: str = "amber",
 ) -> None:
-    sub_html = f'<div class="kpi-sub">{subtitle}</div>' if subtitle else ""
+    html_secundario = f'<div class="kpi-sub">{subtitulo}</div>' if subtitulo else ""
     st.markdown(
         f"""
-        <div class="kpi-card kpi-tone-{tone}">
+        <div class="kpi-card kpi-tone-{tono}">
           <div class="kpi-top">
-            <span class="kpi-label">{label}</span>
-            <span class="kpi-icon">{icon}</span>
+            <span class="kpi-label">{etiqueta}</span>
+            <span class="kpi-icon">{icono}</span>
           </div>
           <div>
-            <div class="kpi-value">{value}</div>
-            {sub_html}
+            <div class="kpi-value">{valor}</div>
+            {html_secundario}
           </div>
         </div>
         """,
@@ -759,40 +759,40 @@ def kpi_card(
     )
 
 
-def section_header(title: str, subtitle: str = "", icon: str = "🗂️", badge: str = "") -> None:
-    sub_html = f'<p class="section-banner-sub">{subtitle}</p>' if subtitle else ""
-    badge_html = f'<span class="section-badge">{badge}</span>' if badge else ""
+def section_header(titulo: str, subtitulo: str = "", icono: str = "🗂️", insignia: str = "") -> None:
+    html_secundario = f'<p class="section-banner-sub">{subtitulo}</p>' if subtitulo else ""
+    html_insignia = f'<span class="section-badge">{insignia}</span>' if insignia else ""
     st.markdown(
         f"""
         <div class="section-banner">
           <div class="section-banner-left">
-            <div class="section-banner-icon">{icon}</div>
+            <div class="section-banner-icon">{icono}</div>
             <div>
-              <h3 class="section-banner-title">{title}</h3>
-              {sub_html}
+              <h3 class="section-banner-title">{titulo}</h3>
+              {html_secundario}
             </div>
           </div>
-          {badge_html}
+          {html_insignia}
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 
-def render_sidebar_user(user: dict) -> None:
-    name = str(user.get("nombre") or user.get("usuario") or "Usuario").strip()
-    parts = [p[0].upper() for p in name.split() if p][:2]
-    initials = "".join(parts) or "U"
-    role_label = user.get("role_label", "Operador")
+def render_sidebar_user(usuario: dict) -> None:
+    nombre = str(usuario.get("nombre") or usuario.get("usuario") or "Usuario").strip()
+    partes = [p[0].upper() for p in nombre.split() if p][:2]
+    iniciales = "".join(partes) or "U"
+    etiqueta_rol = usuario.get("role_label", "Operador")
     st.sidebar.markdown(
         f"""
         <div class="sidebar-user-card">
-          <div class="sidebar-user-avatar">{initials}</div>
+          <div class="sidebar-user-avatar">{iniciales}</div>
           <div class="sidebar-user-info">
-            <span class="sidebar-user-name">{name}</span>
+            <span class="sidebar-user-name">{nombre}</span>
             <span class="sidebar-user-role">
               <span class="sidebar-role-dot"></span>
-              {role_label}
+              {etiqueta_rol}
             </span>
           </div>
         </div>
@@ -819,55 +819,55 @@ def handle_database_error(error: Exception) -> None:
         database_error()
 
 
-def empty_state(title: str, description: str, icon: str = "📭") -> None:
+def empty_state(titulo: str, descripcion: str, icono: str = "📭") -> None:
     st.markdown(
         f"""
         <div class="empty-state">
-          <div class="empty-state-icon">{icon}</div>
-          <strong>{title}</strong>
-          <p>{description}</p>
+          <div class="empty-state-icon">{icono}</div>
+          <strong>{titulo}</strong>
+          <p>{descripcion}</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 
-def currency(value) -> str:
-    amount = f"{float(value or 0):,.2f}"
-    return "$ " + amount.replace(",", "_").replace(".", ",").replace("_", ".")
+def currency(valor) -> str:
+    monto = f"{float(valor or 0):,.2f}"
+    return "$ " + monto.replace(",", "_").replace(".", ",").replace("_", ".")
 
 
-def records_table(records: list[dict], key: str, empty_title: str, empty_description: str) -> None:
-    if not records:
-        empty_state(empty_title, empty_description)
+def records_table(registros: list[dict], clave: str, titulo_vacio: str, descripcion_vacia: str) -> None:
+    if not registros:
+        estado_vacio(titulo_vacio, descripcion_vacia)
         return
-    frame = pd.DataFrame(records)
-    search_col, count_col = st.columns([3, 1])
-    with search_col:
-        query = st.text_input(
+    marco = pd.DataFrame(registros)
+    col_busqueda, col_cantidad = st.columns([3, 1])
+    with col_busqueda:
+        consulta = st.text_input(
             "Buscar",
-            key=f"buscar_{key}",
+            key=f"buscar_{clave}",
             placeholder="🔍 Filtrar por nombre, código, estado, cliente o monto…",
             label_visibility="collapsed",
         )
-    if query.strip():
-        matches = frame.astype(str).apply(
-            lambda column: column.str.contains(query.strip(), case=False, na=False, regex=False)
+    if consulta.strip():
+        coincidencias = marco.astype(str).apply(
+            lambda columna: columna.str.contains(consulta.strip(), case=False, na=False, regex=False)
         )
-        frame = frame[matches.any(axis=1)]
-    with count_col:
-        total_str = f"{len(frame):,}".replace(",", ".")
+        marco = marco[coincidencias.any(axis=1)]
+    with col_cantidad:
+        total_texto = f"{len(marco):,}".replace(",", ".")
         st.markdown(
-            f'<div style="text-align:right; padding-top:0.35rem;"><span class="table-toolbar-meta">📋 {total_str} registros</span></div>',
+            f'<div style="text-align:right; padding-top:0.35rem;"><span class="table-toolbar-meta">📋 {total_texto} registros</span></div>',
             unsafe_allow_html=True,
         )
-    if frame.empty:
-        empty_state("Sin coincidencias para tu búsqueda", "Probá con otro término o limpiá el filtro para ver todos los registros.", icon="🔎")
+    if marco.empty:
+        estado_vacio("Sin coincidencias para tu búsqueda", "Probá con otro término o limpiá el filtro para ver todos los registros.", icon="🔎")
         return
-    st.dataframe(frame, hide_index=True, width="stretch")
+    st.dataframe(marco, hide_index=True, width="stretch")
 
 
-def client_entry_rows(*, key_prefix: str = "client") -> None:
+def client_entry_rows(*, prefijo_clave: str = "client") -> None:
     from src.core.authorization import can_write
     from src.core.session import current_user
     from src.services.client_service import create_client
@@ -879,42 +879,42 @@ def client_entry_rows(*, key_prefix: str = "client") -> None:
     section_header(
         "Registrar nuevo cliente",
         "Completá la identificación fiscal del cliente y, opcionalmente, su domicilio y teléfono inicial.",
-        icon="👥",
-        badge="Alta de cliente",
+        icono="👥",
+        insignia="Alta de cliente",
     )
 
-    with st.form(f"{key_prefix}_create_client_form", clear_on_submit=True):
+    with st.form(f"{prefijo_clave}_create_client_form", clear_on_submit=True):
         st.markdown('<p class="panel-heading">IDENTIFICACIÓN FISCAL Y PERSONAL</p>', unsafe_allow_html=True)
-        col_name, col_surname, col_cuit = st.columns(3)
-        with col_name:
-            first_name = st.text_input("Nombre", placeholder="Ej. Martín", max_chars=45)
-        with col_surname:
-            last_name = st.text_input("Apellido", placeholder="Ej. Rodríguez", max_chars=45)
+        col_nombre, col_apellido, col_cuit = st.columns(3)
+        with col_nombre:
+            nombre = st.text_input("Nombre", placeholder="Ej. Martín", max_chars=45)
+        with col_apellido:
+            apellido = st.text_input("Apellido", placeholder="Ej. Rodríguez", max_chars=45)
         with col_cuit:
             cuit = st.text_input("CUIT / CUIL (8 a 11 dígitos)", placeholder="Ej. 12345678 o 20-12345678-9", max_chars=13)
 
         st.markdown('<p class="panel-heading" style="margin-top:0.65rem;">DOMICILIO Y TELÉFONO DE CONTACTO (OPCIONAL)</p>', unsafe_allow_html=True)
         st.caption("Si completás estos campos, el domicilio y teléfono quedarán asociados al cliente para sus presupuestos.")
-        col_addr, col_city, col_phone = st.columns([1.2, 1, 1])
-        with col_addr:
-            address = st.text_input("Dirección del cliente", placeholder="Calle y número", max_chars=100)
-        with col_city:
-            city = st.text_input("Ciudad / Localidad", placeholder="Localidad", max_chars=100)
-        with col_phone:
-            phone = st.text_input("Teléfono del cliente", placeholder="Código de área + número", max_chars=20)
+        col_direccion, col_ciudad, col_telefono = st.columns([1.2, 1, 1])
+        with col_direccion:
+            direccion = st.text_input("Dirección del cliente", placeholder="Calle y número", max_chars=100)
+        with col_ciudad:
+            ciudad = st.text_input("Ciudad / Localidad", placeholder="Localidad", max_chars=100)
+        with col_telefono:
+            telefono = st.text_input("Teléfono del cliente", placeholder="Código de área + número", max_chars=20)
 
-        submitted = st.form_submit_button("💾 Guardar cliente", type="primary", width="stretch")
+        enviado = st.form_submit_button("💾 Guardar cliente", type="primary", width="stretch")
 
-    if submitted:
+    if enviado:
         try:
-            saved = create_client(
+            guardado = create_client(
                 cuit=cuit,
-                nombre=first_name,
-                apellido=last_name,
-                direccion=address,
-                ciudad=city,
-                telefono=phone,
+                nombre=nombre,
+                apellido=apellido,
+                direccion=direccion,
+                ciudad=ciudad,
+                telefono=telefono,
             )
-            st.success(f"✅ Cliente {saved['nombre_completo']} ({saved['cuit_display']}) registrado correctamente.")
+            st.success(f"✅ Cliente {guardado['nombre_completo']} ({guardado['cuit_display']}) registrado correctamente.")
         except (ValueError, SQLAlchemyError) as error:
             handle_database_error(error)

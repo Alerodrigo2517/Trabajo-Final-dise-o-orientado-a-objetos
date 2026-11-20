@@ -1,16 +1,16 @@
 """Roles de aplicación guardados en la columna usuarios.rol de MySQL."""
-ADMIN = "ADMINISTRADOR"
-OPERATOR = "OPERADOR"
+ADMINISTRADOR = "ADMINISTRADOR"
+OPERADOR = "OPERADOR"
 AUDITOR = "AUDITOR"
-ROLE_CODES = (ADMIN, OPERATOR, AUDITOR)
-ROLE_LABELS = {ADMIN: "Administrador", OPERATOR: "Operador", AUDITOR: "Auditor · solo lectura"}
+CODIGOS_ROL = (ADMINISTRADOR, OPERADOR, AUDITOR)
+ETIQUETAS_ROL = {ADMINISTRADOR: "Administrador", OPERADOR: "Operador", AUDITOR: "Auditor · solo lectura"}
 
-def normalize_role(role: str | None) -> str:
-    value = (role or "").strip().upper()
-    return value if value in ROLE_CODES else AUDITOR
+def normalize_role(rol: str | None) -> str:
+    valor = (rol or "").strip().upper()
+    return valor if valor in CODIGOS_ROL else AUDITOR
 
-def can_write(user: dict | None) -> bool:
-    return bool(user) and normalize_role(user.get("role")) in (ADMIN, OPERATOR)
+def can_write(usuario: dict | None) -> bool:
+    return bool(usuario) and normalize_role(usuario.get("role")) in (ADMINISTRADOR, OPERADOR)
 
-def is_admin(user: dict | None) -> bool:
-    return bool(user) and normalize_role(user.get("role")) == ADMIN
+def is_admin(usuario: dict | None) -> bool:
+    return bool(usuario) and normalize_role(usuario.get("role")) == ADMINISTRADOR

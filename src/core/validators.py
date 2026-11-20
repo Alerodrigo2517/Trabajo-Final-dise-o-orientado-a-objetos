@@ -4,36 +4,36 @@ import re
 from decimal import Decimal, InvalidOperation
 
 
-def clean_text(value: str, field_name: str, max_length: int) -> str:
-    cleaned = " ".join((value or "").strip().split())
-    if not cleaned:
-        raise ValueError(f"Completá {field_name}.")
-    if len(cleaned) > max_length:
-        raise ValueError(f"{field_name.capitalize()} admite hasta {max_length} caracteres.")
-    return cleaned
+def clean_text(valor: str, nombre_campo: str, longitud_maxima: int) -> str:
+    limpio = " ".join((valor or "").strip().split())
+    if not limpio:
+        raise ValueError(f"Completá {nombre_campo}.")
+    if len(limpio) > longitud_maxima:
+        raise ValueError(f"{nombre_campo.capitalize()} admite hasta {longitud_maxima} caracteres.")
+    return limpio
 
 
-def normalize_cuit(value: str) -> str:
-    digits = re.sub(r"\D", "", value or "")
-    if not 8 <= len(digits) <= 11:
+def normalize_cuit(valor: str) -> str:
+    digitos = re.sub(r"\D", "", valor or "")
+    if not 8 <= len(digitos) <= 11:
         raise ValueError("El CUIT/CUIL debe contener entre 8 y 11 dígitos.")
-    return digits
+    return digitos
 
 
-def display_cuit(value: str) -> str:
-    digits = normalize_cuit(value)
-    if len(digits) < 11:
-        return digits
-    return f"{digits[:2]}-{digits[2:10]}-{digits[10]}"
+def display_cuit(valor: str) -> str:
+    digitos = normalize_cuit(valor)
+    if len(digitos) < 11:
+        return digitos
+    return f"{digitos[:2]}-{digitos[2:10]}-{digitos[10]}"
 
 
-def positive_decimal(value: Decimal | int | float | str, field_name: str, *, allow_zero: bool = False) -> Decimal:
+def positive_decimal(valor: Decimal | int | float | str, nombre_campo: str, *, permitir_cero: bool = False) -> Decimal:
     try:
-        amount = Decimal(str(value))
+        monto = Decimal(str(valor))
     except (InvalidOperation, ValueError):
-        raise ValueError(f"{field_name.capitalize()} debe ser un número válido.") from None
-    if not amount.is_finite() or amount < 0 or (amount == 0 and not allow_zero):
-        comparator = "no puede ser negativo" if allow_zero else "debe ser mayor que cero"
-        raise ValueError(f"{field_name.capitalize()} {comparator}.")
-    return amount
+        raise ValueError(f"{nombre_campo.capitalize()} debe ser un número válido.") from None
+    if not monto.is_finite() or monto < 0 or (monto == 0 and not permitir_cero):
+        comparador = "no puede ser negativo" if permitir_cero else "debe ser mayor que cero"
+        raise ValueError(f"{nombre_campo.capitalize()} {comparador}.")
+    return monto
 

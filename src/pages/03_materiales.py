@@ -13,85 +13,85 @@ from src.ui import (
     section_header,
 )
 
-can_edit = can_write(current_user())
+puede_editar = can_write(current_user())
 page_header(
     "ABASTECIMIENTO",
     "Materiales",
     "Mantené el catálogo de insumos metalúrgicos y sus precios unitarios de referencia para cotizar presupuestos.",
-    badge="Catálogo de insumos",
+    insignia="Catálogo de insumos",
 )
 
-suppliers = []
-materials = []
+proveedores = []
+materiales = []
 try:
-    suppliers = list_suppliers()
-    materials = list_materials()
+    proveedores = list_suppliers()
+    materiales = list_materials()
 except SQLAlchemyError:
     database_error()
 
-avg_price = (
-    sum(float(material["precio_unitario"] or 0) for material in materials) / len(materials)
-    if materials
+precio_promedio = (
+    sum(float(material["precio_unitario"] or 0) for material in materiales) / len(materiales)
+    if materiales
     else 0.0
 )
-max_price = max((float(material["precio_unitario"] or 0) for material in materials), default=0.0)
-linked_suppliers = len({material["id_proveedor"] for material in materials})
+precio_maximo = max((float(material["precio_unitario"] or 0) for material in materiales), default=0.0)
+proveedores_asociados = len({material["id_proveedor"] for material in materiales})
 
-kpis = st.columns(4)
-with kpis[0]:
-    kpi_card("Materiales en catálogo", len(materials), "Insumos listos para cotizar", icon="🧱", tone="amber")
-with kpis[1]:
-    kpi_card("Precio promedio", currency(avg_price), "Referencia del catálogo actual", icon="🏷️", tone="emerald")
-with kpis[2]:
-    kpi_card("Mayor valor unitario", currency(max_price), "Insumo de mayor costo", icon="📈", tone="blue")
-with kpis[3]:
-    kpi_card("Proveedores vinculados", linked_suppliers, f"De {len(suppliers)} proveedores activos", icon="🏭", tone="slate")
+indicadores = st.columns(4)
+with indicadores[0]:
+    kpi_card("Materiales en catálogo", len(materiales), "Insumos listos para cotizar", icono="🧱", tono="amber")
+with indicadores[1]:
+    kpi_card("Precio promedio", currency(precio_promedio), "Referencia del catálogo actual", icono="🏷️", tono="emerald")
+with indicadores[2]:
+    kpi_card("Mayor valor unitario", currency(precio_maximo), "Insumo de mayor costo", icono="📈", tono="blue")
+with indicadores[3]:
+    kpi_card("Proveedores vinculados", proveedores_asociados, f"De {len(proveedores)} proveedores activos", icono="🏭", tono="slate")
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
-if can_edit:
-    tab_list, tab_new = st.tabs(["📋 Catálogo de materiales registrados", "➕ Registrar nuevo material"])
+if puede_editar:
+    pestana_lista, pestana_nuevo = st.tabs(["📋 Catálogo de materiales registrados", "➕ Registrar nuevo material"])
 else:
     st.info("👁️ Tu perfil puede consultar el catálogo, pero no registrar materiales.")
-    tab_list = st.container()
-    tab_new = None
+    pestana_lista = st.container()
+    pestana_nuevo = None
 
-if tab_new is not None:
-    with tab_new:
+if pestana_nuevo is not None:
+    with pestana_nuevo:
         with st.container(border=True):
             section_header(
                 "Registrar material",
                 "Definí la descripción técnica del insumo, su costo unitario y el proveedor habitual.",
-                icon="🧱",
-                badge="Nuevo insumo",
+                icono="🧱",
+                insignia="Nuevo insumo",
             )
-            if suppliers:
-                supplier_options = {
-                    f"{supplier['nombre']} · {supplier['rubro']} (#{supplier['id_proveedor']})": supplier
-                    for supplier in suppliers
+            if proveedores:
+                opciones_proveedores = {
+                    f"{proveedor['nombre']} · {proveedor['rubro']} (#{proveedor['id_proveedor']})": proveedor
+                    for proveedor in proveedores
                 }
                 with st.form("material_form", clear_on_submit=True):
                     st.markdown('<p class="panel-heading">ESPECIFICACIÓN Y COSTO DEL INSUMO</p>', unsafe_allow_html=True)
-                    material_description = st.text_input(
+                    descripcion_material = st.text_input(
                         "Descripción del material",
                         placeholder="Ej. Caño estructural 40x40x1.6 mm (barra 6 m)",
                     )
-                    price_col, supplier_col = st.columns([1, 1.25])
-                    with price_col:
-                        material_price = st.number_input(
+                    col_precio, col_proveedor = st.columns([1, 1.25])
+                    with col_precio:
+                        precio_material = st.number_input(
                             "Precio unitario (ARS $)", min_value=0.0, value=0.0, step=500.0
                         )
-                    with supplier_col:
-                        supplier_label = st.selectbox("Proveedor habitual", list(supplier_options))
+                    with col_proveedor:
+                        etiqueta_proveedor = st.selectbox("Proveedor habitual", list(opciones_proveedores))
                     material_submit = st.form_submit_button(
                         "💾 Guardar material", type="primary", width="stretch"
                     )
                 if material_submit:
                     try:
                         create_material(
-                            material_description,
-                            material_price,
-                            supplier_options[supplier_label]["id_proveedor"],
+                            descripcion_material,
+                            precio_material,
+                            opciones_proveedores[etiqueta_proveedor]["id_proveedor"],
                         )
                         st.success("✅ Material registrado correctamente.")
                         st.rerun()
@@ -101,25 +101,25 @@ if tab_new is not None:
                 st.info("Primero registrá un proveedor para poder asociarlo con el material.")
                 st.page_link("src/pages/07_proveedores.py", label="Ir a Proveedores", icon="🏭")
 
-with tab_list:
+with pestana_lista:
     with st.container(border=True):
         section_header(
             "Materiales registrados",
             "Precios unitarios utilizados automáticamente al confeccionar presupuestos.",
-            icon="🧱",
-            badge=f"{len(materials)} insumos",
+            icono="🧱",
+            insignia=f"{len(materiales)} insumos",
         )
-        material_rows = [
+        filas_materiales = [
             {
-                "N.º": row["id_material"],
-                "Descripción": row["descripcion"],
-                "Precio unitario": currency(row["precio_unitario"]),
-                "Proveedor": row["proveedor"],
+                "N.º": fila["id_material"],
+                "Descripción": fila["descripcion"],
+                "Precio unitario": currency(fila["precio_unitario"]),
+                "Proveedor": fila["proveedor"],
             }
-            for row in materials
+            for fila in materiales
         ]
         records_table(
-            material_rows,
+            filas_materiales,
             "materials",
             "Todavía no hay materiales cargados",
             "Abrí la pestaña «Registrar nuevo material» para cargar insumos al catálogo.",

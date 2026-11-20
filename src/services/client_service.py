@@ -12,28 +12,28 @@ from src.repositories.client_repository import ClientRepository
 
 
 def list_clients() -> list[dict]:
-    with get_session() as session:
-        clients = ClientRepository.list_clients(session)
+    with get_session() as sesion:
+        clientes = ClientRepository.list_clients(sesion)
         return [
             {
-                "cuit_cliente": client.cuit_cliente,
-                "cuit_display": display_cuit(client.cuit_cliente),
-                "nombre": client.nombre,
-                "apellido": client.apellido,
-                "nombre_completo": f"{client.nombre} {client.apellido}",
+                "cuit_cliente": cliente.cuit_cliente,
+                "cuit_display": display_cuit(cliente.cuit_cliente),
+                "nombre": cliente.nombre,
+                "apellido": cliente.apellido,
+                "nombre_completo": f"{cliente.nombre} {cliente.apellido}",
                 "contactos": [
                     {
-                        "id_contacto": contact.id_contacto,
-                        "direccion": contact.direccion,
-                        "ciudad": contact.ciudad.nombre_ciudad,
-                        "telefono": contact.telefono,
-                        "fecha_desde": contact.fecha_desde,
-                        "fecha_hasta": contact.fecha_hasta,
+                        "id_contacto": contacto.id_contacto,
+                        "direccion": contacto.direccion,
+                        "ciudad": contacto.ciudad.nombre_ciudad,
+                        "telefono": contacto.telefono,
+                        "fecha_desde": contacto.fecha_desde,
+                        "fecha_hasta": contacto.fecha_hasta,
                     }
-                    for contact in client.contactos
+                    for contacto in cliente.contactos
                 ],
             }
-            for client in clients
+            for cliente in clientes
         ]
 
 
@@ -45,72 +45,72 @@ def create_client(
     ciudad: str = "",
     telefono: str = "",
 ) -> dict:
-    normalized_cuit = normalize_cuit(cuit)
-    cleaned_name = clean_text(nombre, "el nombre", 45)
-    cleaned_surname = clean_text(apellido, "el apellido", 45)
+    cuit_normalizado = normalize_cuit(cuit)
+    nombre_limpio = clean_text(nombre, "el nombre", 45)
+    apellido_limpio = clean_text(apellido, "el apellido", 45)
 
-    has_contact_data = any((direccion or "").strip() or (ciudad or "").strip() or (telefono or "").strip() for _ in [0])
-    cleaned_address = ""
-    cleaned_city = ""
-    cleaned_phone = ""
-    if has_contact_data:
-        cleaned_address = clean_text(direccion, "la dirección del cliente", 100)
-        cleaned_city = clean_text(ciudad, "la ciudad del cliente", 100)
-        cleaned_phone = clean_text(telefono, "el teléfono del cliente", 20)
+    tiene_datos_contacto = any((direccion or "").strip() or (ciudad or "").strip() or (telefono or "").strip() for _ in [0])
+    direccion_limpia = ""
+    ciudad_limpia = ""
+    telefono_limpio = ""
+    if tiene_datos_contacto:
+        direccion_limpia = clean_text(direccion, "la dirección del cliente", 100)
+        ciudad_limpia = clean_text(ciudad, "la ciudad del cliente", 100)
+        telefono_limpio = clean_text(telefono, "el teléfono del cliente", 20)
 
     try:
-        with get_session() as session:
-            existing = ClientRepository.list_clients(session)
-            if any(re.sub(r"\D", "", client.cuit_cliente) == normalized_cuit for client in existing):
+        with get_session() as sesion:
+            existentes = ClientRepository.list_clients(sesion)
+            if any(re.sub(r"\D", "", cliente.cuit_cliente) == cuit_normalizado for cliente in existentes):
                 raise ValueError("Ya existe un cliente con ese CUIT.")
-            client = ClientRepository.create_client(
-                session,
-                cuit=normalized_cuit,
-                nombre=cleaned_name,
-                apellido=cleaned_surname,
+            cliente = ClientRepository.create_client(
+                sesion,
+                cuit=cuit_normalizado,
+                nombre=nombre_limpio,
+                apellido=apellido_limpio,
             )
-            if has_contact_data:
-                city_orm = BudgetRepository.get_or_create_city(session, cleaned_city)
+            if tiene_datos_contacto:
+                ciudad_orm = BudgetRepository.get_or_create_city(sesion, ciudad_limpia)
                 BudgetRepository.create_client_contact(
-                    session,
-                    client_cuit=client.cuit_cliente,
-                    address=cleaned_address,
-                    city=city_orm,
-                    phone=cleaned_phone,
-                    start_date=date.today(),
+                    sesion,
+                    cuit_cliente=cliente.cuit_cliente,
+                    direccion=direccion_limpia,
+                    ciudad=ciudad_orm,
+                    telefono=telefono_limpio,
+                    fecha_inicio=date.today(),
                 )
             return {
-                "cuit_cliente": client.cuit_cliente,
-                "cuit_display": display_cuit(client.cuit_cliente),
-                "nombre": client.nombre,
-                "apellido": client.apellido,
-                "nombre_completo": f"{client.nombre} {client.apellido}",
+                "cuit_cliente": cliente.cuit_cliente,
+                "cuit_display": display_cuit(cliente.cuit_cliente),
+                "nombre": cliente.nombre,
+                "apellido": cliente.apellido,
+                "nombre_completo": f"{cliente.nombre} {cliente.apellido}",
             }
     except IntegrityError as exc:
         raise ValueError("Ya existe un cliente con ese CUIT.") from exc
 
 
 def list_client_contacts(cuit: str) -> list[dict]:
-    legacy_cuit = (cuit or "").strip()
+    cuit_legacy = (cuit or "").strip()
     try:
-        normalized_cuit = normalize_cuit(cuit)
+        cuit_normalizado = normalize_cuit(cuit)
     except ValueError:
-        normalized_cuit = legacy_cuit
-    with get_session() as session:
-        client = ClientRepository.get_by_cuit(session, legacy_cuit)
-        if client is None and normalized_cuit != legacy_cuit:
-            client = ClientRepository.get_by_cuit(session, normalized_cuit)
-        if client is None:
+        cuit_normalizado = cuit_legacy
+    with get_session() as sesion:
+        cliente = ClientRepository.get_by_cuit(sesion, cuit_legacy)
+        if cliente is None and cuit_normalizado != cuit_legacy:
+            cliente = ClientRepository.get_by_cuit(sesion, cuit_normalizado)
+        if cliente is None:
             return []
-        contacts = ClientRepository.contacts_for_client(session, client.cuit_cliente)
+        contactos = ClientRepository.contacts_for_client(sesion, cliente.cuit_cliente)
         return [
             {
-                "id_contacto": contact.id_contacto,
-                "direccion": contact.direccion,
-                "ciudad": contact.ciudad.nombre_ciudad,
-                "telefono": contact.telefono,
-                "fecha_desde": contact.fecha_desde,
-                "fecha_hasta": contact.fecha_hasta,
+                "id_contacto": contacto.id_contacto,
+                "direccion": contacto.direccion,
+                "ciudad": contacto.ciudad.nombre_ciudad,
+                "telefono": contacto.telefono,
+                "fecha_desde": contacto.fecha_desde,
+                "fecha_hasta": contacto.fecha_hasta,
             }
-            for contact in contacts
+            for contacto in contactos
         ]

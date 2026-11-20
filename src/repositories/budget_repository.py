@@ -18,8 +18,8 @@ from src.models.orm import (
 
 class BudgetRepository:
     @staticmethod
-    def list_budgets(session: Session) -> list[PresupuestoORM]:
-        statement = (
+    def list_budgets(sesion: Session) -> list[PresupuestoORM]:
+        sentencia = (
             select(PresupuestoORM)
             .options(
                 joinedload(PresupuestoORM.cliente_contacto).joinedload(ClientesContactoORM.cliente),
@@ -32,13 +32,13 @@ class BudgetRepository:
             )
             .order_by(PresupuestoORM.fecha_presupuesto.desc(), PresupuestoORM.id_presupuesto.desc())
         )
-        return list(session.scalars(statement).unique())
+        return list(sesion.scalars(sentencia).unique())
 
     @staticmethod
-    def get_budget(session: Session, budget_id: int) -> PresupuestoORM | None:
-        statement = (
+    def get_budget(sesion: Session, id_presupuesto: int) -> PresupuestoORM | None:
+        sentencia = (
             select(PresupuestoORM)
-            .where(PresupuestoORM.id_presupuesto == budget_id)
+            .where(PresupuestoORM.id_presupuesto == id_presupuesto)
             .options(
                 joinedload(PresupuestoORM.cliente_contacto).joinedload(ClientesContactoORM.cliente),
                 joinedload(PresupuestoORM.ubicacion_trabajo).joinedload(UbicacionTrabajoORM.ciudad),
@@ -48,76 +48,76 @@ class BudgetRepository:
                 joinedload(PresupuestoORM.trabajo),
             )
         )
-        return session.scalar(statement)
+        return sesion.scalar(sentencia)
 
     @staticmethod
-    def get_or_create_city(session: Session, name: str) -> CiudadORM:
-        city = session.scalar(select(CiudadORM).where(func.lower(CiudadORM.nombre_ciudad) == name.lower()))
-        if city is None:
-            city = CiudadORM(nombre_ciudad=name)
-            session.add(city)
-            session.flush()
-        return city
+    def get_or_create_city(sesion: Session, nombre: str) -> CiudadORM:
+        ciudad = sesion.scalar(select(CiudadORM).where(func.lower(CiudadORM.nombre_ciudad) == nombre.lower()))
+        if ciudad is None:
+            ciudad = CiudadORM(nombre_ciudad=nombre)
+            sesion.add(ciudad)
+            sesion.flush()
+        return ciudad
 
     @staticmethod
-    def get_or_create_work_type(session: Session, name: str) -> TipoTrabajoORM:
-        work_type = session.scalar(
-            select(TipoTrabajoORM).where(func.lower(TipoTrabajoORM.nombre_tipo) == name.lower())
+    def get_or_create_work_type(sesion: Session, nombre: str) -> TipoTrabajoORM:
+        tipo_trabajo = sesion.scalar(
+            select(TipoTrabajoORM).where(func.lower(TipoTrabajoORM.nombre_tipo) == nombre.lower())
         )
-        if work_type is None:
-            work_type = TipoTrabajoORM(nombre_tipo=name)
-            session.add(work_type)
-            session.flush()
-        return work_type
+        if tipo_trabajo is None:
+            tipo_trabajo = TipoTrabajoORM(nombre_tipo=nombre)
+            sesion.add(tipo_trabajo)
+            sesion.flush()
+        return tipo_trabajo
 
     @staticmethod
-    def get_client_contact(session: Session, contact_id: int) -> ClientesContactoORM | None:
-        return session.get(ClientesContactoORM, contact_id)
+    def get_client_contact(sesion: Session, id_contacto: int) -> ClientesContactoORM | None:
+        return sesion.get(ClientesContactoORM, id_contacto)
 
     @staticmethod
     def create_client_contact(
-        session: Session,
+        sesion: Session,
         *,
-        client_cuit: str,
-        address: str,
-        city: CiudadORM,
-        phone: str,
-        start_date: date,
+        cuit_cliente: str,
+        direccion: str,
+        ciudad: CiudadORM,
+        telefono: str,
+        fecha_inicio: date,
     ) -> ClientesContactoORM:
-        contact = ClientesContactoORM(
-            fk_cliente=client_cuit,
-            direccion=address,
-            ciudad=city,
-            telefono=phone,
-            fecha_desde=start_date,
+        contacto = ClientesContactoORM(
+            fk_cliente=cuit_cliente,
+            direccion=direccion,
+            ciudad=ciudad,
+            telefono=telefono,
+            fecha_desde=fecha_inicio,
         )
-        session.add(contact)
-        session.flush()
-        return contact
+        sesion.add(contacto)
+        sesion.flush()
+        return contacto
 
     @staticmethod
-    def create_work_location(session: Session, *, address: str, city: CiudadORM) -> UbicacionTrabajoORM:
-        location = UbicacionTrabajoORM(domicilio=address, ciudad=city)
-        session.add(location)
-        session.flush()
-        return location
+    def create_work_location(sesion: Session, *, direccion: str, ciudad: CiudadORM) -> UbicacionTrabajoORM:
+        ubicacion = UbicacionTrabajoORM(domicilio=direccion, ciudad=ciudad)
+        sesion.add(ubicacion)
+        sesion.flush()
+        return ubicacion
 
     @staticmethod
-    def list_materials(session: Session) -> list[MaterialORM]:
-        return list(session.scalars(select(MaterialORM).order_by(MaterialORM.descripcion)))
+    def list_materials(sesion: Session) -> list[MaterialORM]:
+        return list(sesion.scalars(select(MaterialORM).order_by(MaterialORM.descripcion)))
 
     @staticmethod
-    def get_material(session: Session, material_id: int) -> MaterialORM | None:
-        return session.get(MaterialORM, material_id)
+    def get_material(sesion: Session, id_material: int) -> MaterialORM | None:
+        return sesion.get(MaterialORM, id_material)
 
     @staticmethod
-    def create_budget(session: Session, budget: PresupuestoORM) -> PresupuestoORM:
-        session.add(budget)
-        session.flush()
-        return budget
+    def create_budget(sesion: Session, presupuesto: PresupuestoORM) -> PresupuestoORM:
+        sesion.add(presupuesto)
+        sesion.flush()
+        return presupuesto
 
     @staticmethod
-    def update_status(session: Session, budget: PresupuestoORM, status: str) -> None:
-        budget.estado = status
-        session.flush()
+    def update_status(sesion: Session, presupuesto: PresupuestoORM, estado: str) -> None:
+        presupuesto.estado = estado
+        sesion.flush()
 

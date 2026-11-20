@@ -11,29 +11,29 @@ from src.models.orm import ClienteORM, MaterialORM, PagoORM, PresupuestoORM, Tra
 
 class DashboardRepository:
     @staticmethod
-    def get_summary(session: Session, month_start: date, next_month: date) -> dict:
+    def get_summary(sesion: Session, inicio_mes: date, mes_siguiente: date) -> dict:
         # La tabla presupuesto existente no tiene estado: informamos el total real.
-        budget_count = session.scalar(select(func.count(PresupuestoORM.id_presupuesto))) or 0
-        active_work = session.scalar(
+        cantidad_presupuestos = sesion.scalar(select(func.count(PresupuestoORM.id_presupuesto))) or 0
+        trabajo_activo = sesion.scalar(
             select(func.count(TrabajoORM.id_trabajo)).where(
                 TrabajoORM.estado.in_(("PENDIENTE", "EN_PROCESO"))
             )
         ) or 0
-        finished_work = session.scalar(
+        trabajo_terminado = sesion.scalar(
             select(func.count(TrabajoORM.id_trabajo)).where(TrabajoORM.estado == "FINALIZADO")
         ) or 0
-        monthly_income = session.scalar(
+        ingreso_mensual = sesion.scalar(
             select(func.coalesce(func.sum(PagoORM.monto), 0)).where(
-                PagoORM.fecha_pago >= month_start, PagoORM.fecha_pago < next_month
+                PagoORM.fecha_pago >= inicio_mes, PagoORM.fecha_pago < mes_siguiente
             )
         )
-        client_count = session.scalar(select(func.count(ClienteORM.cuit_cliente))) or 0
-        material_count = session.scalar(select(func.count(MaterialORM.id_material))) or 0
+        cantidad_clientes = sesion.scalar(select(func.count(ClienteORM.cuit_cliente))) or 0
+        cantidad_materiales = sesion.scalar(select(func.count(MaterialORM.id_material))) or 0
         return {
-            "presupuestos_total": int(budget_count),
-            "trabajos_activos": int(active_work),
-            "trabajos_terminados": int(finished_work),
-            "ingresos_mes": Decimal(monthly_income or 0),
-            "clientes": int(client_count),
-            "materiales": int(material_count),
+            "presupuestos_total": int(cantidad_presupuestos),
+            "trabajos_activos": int(trabajo_activo),
+            "trabajos_terminados": int(trabajo_terminado),
+            "ingresos_mes": Decimal(ingreso_mensual or 0),
+            "clientes": int(cantidad_clientes),
+            "materiales": int(cantidad_materiales),
         }

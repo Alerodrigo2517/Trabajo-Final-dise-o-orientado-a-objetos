@@ -12,44 +12,44 @@ from src.repositories.payment_repository import PaymentRepository
 
 
 def list_payments() -> list[dict]:
-    with get_session() as session:
-        rows = PaymentRepository.list_payments(session)
+    with get_session() as sesion:
+        filas = PaymentRepository.list_payments(sesion)
         return [
             {
-                "id_pago": row.id_pago,
-                "id_presupuesto": row.fk_presupuesto,
-                "cliente": f"{row.presupuesto.cliente_contacto.cliente.nombre} {row.presupuesto.cliente_contacto.cliente.apellido}",
-                "fecha": row.fecha_pago,
-                "monto": Decimal(row.monto),
-                "metodo": row.metodo_pago,
-                "referencia": row.referencia or "",
+                "id_pago": fila.id_pago,
+                "id_presupuesto": fila.fk_presupuesto,
+                "cliente": f"{fila.presupuesto.cliente_contacto.cliente.nombre} {fila.presupuesto.cliente_contacto.cliente.apellido}",
+                "fecha": fila.fecha_pago,
+                "monto": Decimal(fila.monto),
+                "metodo": fila.metodo_pago,
+                "referencia": fila.referencia or "",
             }
-            for row in rows
+            for fila in filas
         ]
 
 
 def create_payment(
-    *, budget_id: int, payment_date, amount, method: str, reference: str = ""
+    *, id_presupuesto: int, fecha_pago, monto, metodo: str, referencia: str = ""
 ) -> int:
-    payment_amount = positive_decimal(amount, "el monto")
-    cleaned_method = clean_text(method, "el método de pago", 30)
-    cleaned_reference = (reference or "").strip()
-    if len(cleaned_reference) > 100:
+    monto_pago = positive_decimal(monto, "el monto")
+    metodo_limpio = clean_text(metodo, "el método de pago", 30)
+    referencia_limpia = (referencia or "").strip()
+    if len(referencia_limpia) > 100:
         raise ValueError("La referencia admite hasta 100 caracteres.")
     try:
-        with get_session() as session:
-            budget = BudgetRepository.get_budget(session, int(budget_id))
-            if budget is None:
+        with get_session() as sesion:
+            presupuesto = BudgetRepository.get_budget(sesion, int(id_presupuesto))
+            if presupuesto is None:
                 raise ValueError("El presupuesto seleccionado ya no existe.")
-            payment = PagoORM(
-                presupuesto=budget,
-                fecha_pago=payment_date,
-                monto=payment_amount,
-                metodo_pago=cleaned_method,
-                referencia=cleaned_reference or None,
+            pago = PagoORM(
+                presupuesto=presupuesto,
+                fecha_pago=fecha_pago,
+                monto=monto_pago,
+                metodo_pago=metodo_limpio,
+                referencia=referencia_limpia or None,
             )
-            PaymentRepository.create_payment(session, payment)
-            return payment.id_pago
+            PaymentRepository.create_payment(sesion, pago)
+            return pago.id_pago
     except IntegrityError as exc:
         raise ValueError("No se pudo registrar el pago. Verificá los datos e intentá de nuevo.") from exc
 

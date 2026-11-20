@@ -3,8 +3,8 @@
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.core.config import settings
-from src.core.session import start_user_session
+from src.core.config import configuracion
+from src.core.session import start_user_session as iniciar_sesion_usuario
 from src.services.auth_service import AuthService
 from src.ui import get_logo_data_uri
 
@@ -134,16 +134,16 @@ def render_login() -> None:
     if st.session_state.pop("_session_expired", False):
         st.warning("⏱️ Tu sesión venció por inactividad. Volvé a ingresar tus credenciales.")
 
-    logo_uri = get_logo_data_uri()
+    uri_logo = get_logo_data_uri()
     logo_hero_html = (
-        f'<img class="login-hero-logo" src="{logo_uri}" alt="Emblema de Herrería Don Francisco" />'
-        if logo_uri
+        f'<img class="login-hero-logo" src="{uri_logo}" alt="Emblema de Herrería Don Francisco" />'
+        if uri_logo
         else '<div class="login-lock-badge">🔨</div>'
     )
 
-    left_col, right_col = st.columns([1.25, 1], gap="large", vertical_alignment="center")
+    col_izquierda, col_derecha = st.columns([1.25, 1], gap="large", vertical_alignment="center")
 
-    with left_col:
+    with col_izquierda:
         st.markdown(
             f"""
             <div class="login-showcase">
@@ -153,7 +153,7 @@ def render_login() -> None:
             unsafe_allow_html=True,
         )
 
-    with right_col:
+    with col_derecha:
         with st.container(border=True):
             st.markdown(
                 f"""
@@ -167,30 +167,30 @@ def render_login() -> None:
             )
 
             with st.form("login_form", clear_on_submit=False):
-                username = st.text_input(
+                nombre_usuario = st.text_input(
                     "Usuario",
                     max_chars=45,
                     placeholder="Ej. admin",
                     autocomplete="username",
                 )
-                password = st.text_input(
+                contrasena = st.text_input(
                     "Contraseña",
                     type="password",
                     placeholder="••••••••",
                     autocomplete="current-password",
                 )
-                submitted = st.form_submit_button("Ingresar al sistema →", type="primary", width="stretch")
+                enviado = st.form_submit_button("Ingresar al sistema →", type="primary", width="stretch")
 
             st.markdown(
                 '<div class="login-footer-note">🛡️ Acceso protegido por usuario y rol asignado.</div>',
                 unsafe_allow_html=True,
             )
 
-            if not submitted:
+            if not enviado:
                 return
 
             try:
-                user, error = AuthService().login(username, password)
+                usuario, error = AuthService().login(nombre_usuario, contrasena)
             except SQLAlchemyError:
                 st.error("No se pudo validar el acceso en este momento. Verificá la conexión del sistema.")
                 return
@@ -198,9 +198,9 @@ def render_login() -> None:
                 st.error("No se pudo validar el usuario. Revisá la configuración de autenticación.")
                 return
 
-            if error or user is None:
+            if error or usuario is None:
                 st.error(error or "Las credenciales ingresadas no son válidas.")
                 return
 
-            start_user_session(user)
+            iniciar_sesion_usuario(usuario)
             st.rerun()
